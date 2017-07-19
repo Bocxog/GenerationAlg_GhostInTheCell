@@ -1,38 +1,78 @@
 ﻿using System;
-using System.Linq;
-using System.IO;
-using System.Text;
-using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+
+    public interface IMove {
+        int StepsExecution();
+        void ChangeGraph(Graph graph);
+        string GetConsoleCommand();
+    }
+
+    public class MoveTroops : IMove {
+        protected Troop Troop;
+        public MoveTroops(Troop troop) {
+            Troop = troop;
+        }
+        public string GetConsoleCommand() {
+            return string.Format("MOVE {0} {1} {2}", Troop.Src, Troop.Dst, Troop.Size); //MOVE source destination cyborgCount
+        }
+
+        public int StepsExecution() {
+            return Troop.Remaining;
+        }
+
+        public void ChangeGraph(Graph graph) {
+            graph.Troops.Add(Troop);
+        }
+
+    }
+
+    public class Hold : IMove {
+        public void ChangeGraph(Graph graph) { }
+        public string GetConsoleCommand() { return "WAIT"; }
+
+        public int StepsExecution() {
+            return 1;
+        }
+    }
+
+﻿
+using System;using System.Linq;using System.IO;using System.Text;using System.Collections;using System.Collections.Generic;
+
 
 /**
  * Auto-generated code below aims at helping you parse
  * the standard input according to the problem statement.
  **/
-
-namespace  aa {
-
-class Player {
-    static void Main(string[] args) {
+class Player
+{
+    static void Main(string[] args)
+    {
         string[] inputs;
         int factoryCount = int.Parse(Console.ReadLine()); // the number of factories
         int linkCount = int.Parse(Console.ReadLine()); // the number of links between factories
         GraphLinks.Size = factoryCount;
-        GraphLinks.Links = new int[factoryCount, factoryCount];
+        GraphLinks.Links = new int[factoryCount,factoryCount];
         var graph = new Graph();
-        for (int i = 0; i < linkCount; i++) {
+        for (int i = 0; i < linkCount; i++)
+        {
             inputs = Console.ReadLine().Split(' ');
             int factory1 = int.Parse(inputs[0]);
             int factory2 = int.Parse(inputs[1]);
             int distance = int.Parse(inputs[2]);
-            graph.AddLink(factory1, factory2, distance);
+            graph.AddLink(factory1,factory2,distance);
         }
 
         // game loop
-        while (true) {
+        while (true)
+        {
             int entityCount = int.Parse(Console.ReadLine()); // the number of entities (e.g. factories and troops)
             graph.ClearTroops();
-            for (int i = 0; i < entityCount; i++) {
+            for (int i = 0; i < entityCount; i++)
+            {
                 inputs = Console.ReadLine().Split(' ');
                 int entityId = int.Parse(inputs[0]);
                 string entityType = inputs[1];
@@ -45,7 +85,7 @@ class Player {
                 if (entityType == "FACTORY") {
                     graph.RefreshFactoryInfo(entityId, arg1, arg3, arg2);
                 } else if (entityType == "TROOP") {
-                    graph.AddTroop((Side)arg1, arg4, arg2, arg3, arg5);
+                    graph.AddTroop((Side) arg1, arg4, arg2, arg3, arg5);
                 }
             }
 
@@ -54,7 +94,7 @@ class Player {
 
             Console.WriteLine(graph.GetNextBestMove().GetConsoleCommand());
             // Any valid action, such as "WAIT" or "MOVE source destination cyborgs"
-            //            Console.WriteLine("WAIT");
+//            Console.WriteLine("WAIT");
         }
     }
 }
@@ -70,17 +110,17 @@ public class Graph {
 
     public static Graph GetCopy(Graph obj) {
         var copy = new Graph();
-        copy.Factories = obj.Factories.Select(x => new Factory(x.Id) { Income = x.Income, Side = x.Side, TroopsCount = x.TroopsCount }).ToArray();
+        copy.Factories = obj.Factories.Select(x => new Factory(x.Id) { Income = x.Income, Side = x.Side,TroopsCount = x.TroopsCount}).ToArray();
         copy.Troops = obj.Troops.Select(x => Troop.GetCopy(x)).ToList();
         return copy;
     }
 
     public Graph(Graph previous) {
         Factories = previous.Factories.ToArray();
-        foreach (var factory in Factories.Where(x => x.Side != Side.Neutral)) { factory.TroopsCount += factory.Income; }
+        foreach (var factory in Factories.Where(x=>x.Side != Side.Neutral)) {factory.TroopsCount += factory.Income;}
         var troops = previous.Troops.Select(x => Troop.GetCopy(x, 1)).ToList();
-        Troops = troops.Where(x => x.Remaining > 0).ToList();
-        foreach (var troopGroup in troops.Where(x => x.Remaining == 0).GroupBy(x => x.Dst)) {
+        Troops = troops.Where(x=>x.Remaining > 0).ToList();
+        foreach (var troopGroup in troops.Where(x=>x.Remaining == 0).GroupBy(x=>x.Dst)) {
             var factory = Factories[troopGroup.First().Dst];
 
             int troopToFactory =
@@ -92,8 +132,8 @@ public class Graph {
             troopToFactory = Math.Abs(troopToFactory);
 
             var sign = 1;
-            //            if (factory.Side == Side.Neutral  ? troopRestSide == Side.Enemy : (factory.Side != troopRestSide)) 
-            if (factory.Side != troopRestSide)
+//            if (factory.Side == Side.Neutral  ? troopRestSide == Side.Enemy : (factory.Side != troopRestSide)) 
+            if (factory.Side != troopRestSide) 
                 sign = -1;
             factory.TroopsCount += troopToFactory * sign;
 
@@ -103,14 +143,14 @@ public class Graph {
             }
         }
 
-        //        foreach (var factory in Factories) {
-        //            if (factory.Side == Side.Neutral) {
-        //                if (factory.TroopsCount != 0)
-        //                    factory.Side = factory.TroopsCount > 0 ? Side.MyOwn : Side.Enemy;
-        //            }
-        //            else if (factory.TroopsCount < 0)
-        //                factory.Side = factory.Side == Side.Enemy ? Side.MyOwn : Side.Enemy;
-        //        }
+//        foreach (var factory in Factories) {
+//            if (factory.Side == Side.Neutral) {
+//                if (factory.TroopsCount != 0)
+//                    factory.Side = factory.TroopsCount > 0 ? Side.MyOwn : Side.Enemy;
+//            }
+//            else if (factory.TroopsCount < 0)
+//                factory.Side = factory.Side == Side.Enemy ? Side.MyOwn : Side.Enemy;
+//        }
     }
 
     public Graph() {
@@ -172,24 +212,24 @@ public class Troop {
 
 
     public static Troop GetCopy(Troop x, int remainingDecreased = 0) {
-        return new Troop { Dst = x.Dst, Side = x.Side, Size = x.Size, Src = x.Src, Remaining = x.Remaining - remainingDecreased };
+        return new Troop {Dst = x.Dst, Side = x.Side, Size = x.Size, Src = x.Src, Remaining = x.Remaining  - remainingDecreased};
     }
-    //    public Troop() { }
-    //    public Troop(Troop x) {
-    //        Dst = x.Dst;
-    //        Side = x.Side;
-    //        Size = x.Size;
-    //        Src = x.Src;
-    //        Remaining = x.Remaining;
-    //    }
+//    public Troop() { }
+//    public Troop(Troop x) {
+//        Dst = x.Dst;
+//        Side = x.Side;
+//        Size = x.Size;
+//        Src = x.Src;
+//        Remaining = x.Remaining;
+//    }
 }
 
-public class Factory {
-    public Factory(int id) {
+public class Factory{
+    public Factory(int id){
         Id = id;
     }
-    public int Id { get; set; }
-    public int Income { get; set; }
+    public int Id {get;set;}
+    public int Income {get;set;}
     public Side Side { get; set; }
     public int TroopsCount { get; set; }
 
@@ -197,7 +237,7 @@ public class Factory {
         for (int i = 0; i < GraphLinks.Size; i++) {
             var distance = GraphLinks.Links[Id, i];
             if (Id != i && distance > 0)
-                yield return new FactoryLink { DestinationId = i, Distance = distance };
+                yield return new FactoryLink {DestinationId = i, Distance = distance};
         }
     }
 
@@ -207,47 +247,15 @@ public class Factory {
     }
 }
 
-public interface IMove {
-    int StepsExecution();
-    void ChangeGraph(Graph graph);
-    string GetConsoleCommand();
-}
-
-public class MoveTroops : IMove {
-    protected Troop Troop;
-    public MoveTroops(Troop troop) {
-        Troop = troop;
-    }
-    public string GetConsoleCommand() {
-        return string.Format("MOVE {0} {1} {2}", Troop.Src, Troop.Dst, Troop.Size); //MOVE source destination cyborgCount
-    }
-
-    public int StepsExecution() {
-        return Troop.Remaining;
-    }
-
-    public void ChangeGraph(Graph graph) {
-        graph.Troops.Add(Troop);
-    }
-
-}
-
-public class Hold : IMove {
-    public void ChangeGraph(Graph graph) { }
-    public string GetConsoleCommand() { return "WAIT"; }
-
-    public int StepsExecution() {
-        return 1;
-    }
-}
-
 public static class Helper {
     public static float EvalCostFunction(this Graph graph) {
         var factoriesMy = graph.Factories.Where(x => x.Side == Side.MyOwn).ToList();
         var factoriesEnemy = graph.Factories.Where(x => x.Side == Side.Enemy).ToList();
 
+        if (!factoriesEnemy.Any(x => x.Income > 0 || x.TroopsCount > 0))
+            return float.MaxValue;
         return factoriesMy.Sum(x => x.EvalMyFactoryCostFunction(graph))
-            - factoriesEnemy.Sum(x => (x.Income + 0.01f) * x.TroopsCount * 0.03f) // With Neutrals
+               - factoriesEnemy.Sum(x => (x.Income + 0.01f)*(1 + x.TroopsCount*0.03f)) // With Neutrals
             ;
     }
 
@@ -255,17 +263,17 @@ public static class Helper {
         float result = factory.Income;
 
         if (factory.GetLinks().All(x => graph.Factories[x.DestinationId].Side == Side.MyOwn || graph.Factories[x.DestinationId].Income == 0))
-            result -= 0.5f * Math.Min(1, ((float)factory.TroopsCount) / 30);
+            result -= 0.5f*Math.Min(1, ((float) factory.TroopsCount)/30);
         else if (!factory.GetLinks().Any(x => graph.Factories[x.DestinationId].Side == Side.Neutral && graph.Factories[x.DestinationId].Income > 0)) {
             var enemyDistance = factory.GetLinks().Where(x => graph.Factories[x.DestinationId].Side == Side.Enemy).DefaultIfEmpty().Min(x => x.Distance); // TODO: add 2 step compare
-            var penalty = factory.TroopsCount * (enemyDistance > 15 ? 0.3f : enemyDistance > 10 ? 0.085f : 0);
+            var penalty = factory.TroopsCount*(enemyDistance > 15 ? 0.3f : enemyDistance > 10 ? 0.085f : 0);
             result -= penalty;
         }
         return result;
     }
 
     public static IMove GetNextBestMove(this Graph graph) {
-        var moves = new List<IMove> { new Hold() };
+        var moves = new List<IMove> {new Hold()};
         foreach (var factory in graph.Factories.Where(x => x.TroopsCount > 0 && x.Side == Side.MyOwn)) {
             foreach (var link in factory.GetLinks()) {
                 moves.AddRange(Enumerable.Range(1, factory.TroopsCount).Select(x => new MoveTroops(new Troop {
@@ -273,20 +281,20 @@ public static class Helper {
                     Src = factory.Id,
                     Side = Side.MyOwn,
                     Size = x,
-                    Remaining = link.Distance
+                    Remaining = link.Distance + 1
                 })));
             }
-            //            for (int i = 0; i < GraphLinks.Size; i++) {
-            //                var distance = GraphLinks.Links[factory.Id, i];
-            //                if (factory.Id != i && distance > 0)
-            //                    moves.AddRange(Enumerable.Range(1, factory.TroopsCount).Select(x => new MoveTroops(new Troop {
-            //                        Dst = i,
-            //                        Src = factory.Id,
-            //                        Side = Side.MyOwn,
-            //                        Size = x,
-            //                        Remaining = distance
-            //                    })));
-            //            }
+//            for (int i = 0; i < GraphLinks.Size; i++) {
+//                var distance = GraphLinks.Links[factory.Id, i];
+//                if (factory.Id != i && distance > 0)
+//                    moves.AddRange(Enumerable.Range(1, factory.TroopsCount).Select(x => new MoveTroops(new Troop {
+//                        Dst = i,
+//                        Src = factory.Id,
+//                        Side = Side.MyOwn,
+//                        Size = x,
+//                        Remaining = distance
+//                    })));
+//            }
         }
 
         float bestEstimate = float.MinValue;
@@ -313,7 +321,4 @@ public static class Helper {
 
 
     }
-}
-
-
 }
