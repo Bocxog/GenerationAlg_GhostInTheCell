@@ -43,9 +43,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Factory.cs" />
+    <Compile Include="Graph.cs" />
     <Compile Include="Move.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Simples.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
