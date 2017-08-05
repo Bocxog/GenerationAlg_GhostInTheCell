@@ -9,11 +9,12 @@ public class Troop {
     public int Size { get; set; }
     public int Src { get; set; }
     public int Dst { get; set; }
+    public int? DstInCommand { get; set; }
     public int Remaining { get; set; }
 
 
     public static Troop GetCopy(Troop x, int remainingDecreased = 0) {
-        return new Troop { Dst = x.Dst, Side = x.Side, Size = x.Size, Src = x.Src, Remaining = x.Remaining - remainingDecreased };
+        return new Troop { Dst = x.Dst,DstInCommand = x.DstInCommand, Side = x.Side, Size = x.Size, Src = x.Src, Remaining = x.Remaining - remainingDecreased };
     }
     //    public Troop() { }
     //    public Troop(Troop x) {
@@ -34,11 +35,13 @@ public class Factory {
     public Side Side { get; set; }
     public int TroopsCount { get; set; }
 
+    public int TroopsCanBeUsed { get; set; }
+
     public IEnumerable<FactoryLink> GetLinks() {
         for (int i = 0; i < GraphLinks.Size; i++) {
-            var distance = GraphLinks.Links[Id, i];
-            if (Id != i && distance > 0)
-                yield return new FactoryLink { DestinationId = i, Distance = distance };
+            var path = GraphLinks.Links[Id, i];
+            if (Id != i && path.PathType != GraphLinks.PathType.NotConnected)
+                yield return new FactoryLink { DestinationId = i, Distance = path.Distance };
         }
     }
 

@@ -12,22 +12,32 @@ public interface IMove {
 }
 
 public class MoveTroops : IMove {
-    protected Troop Troop;
+    protected ICollection<Troop> Troops;
 
-    public MoveTroops(Troop troop) {
-        Troop = troop;
+    public MoveTroops() {
+        Troops = new List<Troop>();
     }
 
+    public MoveTroops(Troop troop) {
+        Troops = new List<Troop> {troop};
+    }
+
+    public MoveTroops(IEnumerable<Troop> troops) {
+        Troops = troops.ToList();
+    }
+
+    public void AddTroop(Troop troop) { Troops.Add(troop);}
+
     public string GetConsoleCommand() {
-        return string.Format("MOVE {0} {1} {2}", Troop.Src, Troop.Dst, Troop.Size); //MOVE source destination cyborgCount
+        return string.Join(";", Troops.Select(x => string.Format("MOVE {0} {1} {2}", x.Src, x.DstInCommand ?? x.Dst, x.Size))); //MOVE source destination cyborgCount
     }
 
     public int StepsExecution() {
-        return Troop.Remaining;
+        return Troops.Max(x=> x.Remaining);
     }
 
     public void ChangeGraph(Graph graph) {
-        graph.Troops.Add(Troop);
+        graph.Troops.AddRange(Troops);
     }
 }
 

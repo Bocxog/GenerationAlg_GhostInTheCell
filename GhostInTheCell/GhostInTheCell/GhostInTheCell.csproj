@@ -43,6 +43,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CostFunction.cs" />
     <Compile Include="Factory.cs" />
     <Compile Include="Graph.cs" />
     <Compile Include="Move.cs" />

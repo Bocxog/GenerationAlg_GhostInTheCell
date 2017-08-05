@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+public class GraphEstimator : Graph {}
+
 public class Graph {
     public Factory[] Factories { get; private set; }
     public List<Troop> Troops { get; private set; }
@@ -15,12 +17,10 @@ public class Graph {
         return copy;
     }
 
-    public Graph(Graph previous) {
-        Factories = previous.Factories.ToArray();
+    public void DoNextMove() {
         foreach (var factory in Factories.Where(x => x.Side != Side.Neutral)) { factory.TroopsCount += factory.Income; }
-        var troops = previous.Troops.Select(x => Troop.GetCopy(x, 1)).ToList();
-        Troops = troops.Where(x => x.Remaining > 0).ToList();
-        foreach (var troopGroup in troops.Where(x => x.Remaining == 0).GroupBy(x => x.Dst)) {
+        foreach (var troop in Troops) {troop.Remaining--;}
+        foreach (var troopGroup in Troops.Where(x => x.Remaining == 0).GroupBy(x => x.Dst)) {
             var factory = Factories[troopGroup.First().Dst];
 
             int troopToFactory =
@@ -42,6 +42,8 @@ public class Graph {
                 factory.TroopsCount = Math.Abs(factory.TroopsCount);
             }
         }
+        Troops = Troops.Where(x => x.Remaining > 0).ToList();
+
 
         //        foreach (var factory in Factories) {
         //            if (factory.Side == Side.Neutral) {
@@ -72,6 +74,10 @@ public class Graph {
         });
     }
 
+    public int GetTroopSteps() {
+        return Troops.Any() ? Troops.Max(x => x.Remaining) : 0;
+    }
+
     protected Factory GetFactory(int idx) {
         var fact = Factories[idx];
         if (fact != null)
@@ -91,8 +97,8 @@ public class Graph {
     public void AddLink(int f1, int f2, int cost) {
         var Fact1 = GetFactory(f1);
         var Fact2 = GetFactory(f2);
-        GraphLinks.Links[f1, f2] = cost;
-        GraphLinks.Links[f2, f1] = cost;
+        GraphLinks.Links[f1, f2] = new GraphLinks.ShortestPath {Distance = cost, FirstFactoryId = f2, PathType = GraphLinks.PathType.Direct};
+        GraphLinks.Links[f2, f1] = new GraphLinks.ShortestPath { Distance = cost, FirstFactoryId = f1, PathType = GraphLinks.PathType.Direct };
     }
 }
 
