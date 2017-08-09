@@ -1,4 +1,6 @@
-﻿public static class GraphLinks {
+﻿
+
+public static class GraphLinks {
     public static int Size { get; set; }
     public static ShortestPath[,] Links { get; set; }
 

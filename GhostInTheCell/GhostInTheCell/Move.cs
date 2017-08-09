@@ -1,14 +1,35 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;using System.Linq;
 
 
 public interface IMove {
     int StepsExecution();
     void ChangeGraph(Graph graph);
     string GetConsoleCommand();
+}
+
+public class MultiMove : IMove {
+    protected ICollection<IMove> moves;
+
+    public MultiMove() {
+        moves = new List<IMove> {new Hold()};
+    }
+    public void AddMove(IMove move) { moves.Add(move);}
+    public void RemoveLastMove() { moves.Remove(moves.Last());}
+    public void RemoveMove(IMove move) { moves.Remove(move);}
+
+    public int StepsExecution() {
+        return moves.Any() ? moves.Max(x => x.StepsExecution()) : 0;
+    }
+
+    public void ChangeGraph(Graph graph) {
+        foreach (var move in moves) {
+            move.ChangeGraph(graph);
+        }
+    }
+
+    public string GetConsoleCommand() {
+        return string.Join(";", moves.Select(x => x.GetConsoleCommand()));
+    }
 }
 
 public class MoveTroops : IMove {
@@ -33,7 +54,7 @@ public class MoveTroops : IMove {
     }
 
     public int StepsExecution() {
-        return Troops.Max(x=> x.Remaining);
+        return Troops.Any() ? Troops.Max(x => x.Remaining) : 0;
     }
 
     public void ChangeGraph(Graph graph) {
@@ -44,11 +65,22 @@ public class MoveTroops : IMove {
 public class Hold : IMove {
     public void ChangeGraph(Graph graph) {}
 
-    public string GetConsoleCommand() {
+    public virtual string GetConsoleCommand() {
         return "WAIT";
     }
 
     public int StepsExecution() {
         return 1;
+    }
+}
+
+public class Message : Hold {
+    private readonly string _message;
+    public Message(string message) {
+        this._message = message.Replace(';', '_');
+    }
+
+    public override string GetConsoleCommand() {
+        return "MSG " + _message;
     }
 }

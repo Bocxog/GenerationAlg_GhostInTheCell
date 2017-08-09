@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 public class Troop {
     public Side Side { get; set; }
@@ -41,13 +37,15 @@ public class Factory {
         for (int i = 0; i < GraphLinks.Size; i++) {
             var path = GraphLinks.Links[Id, i];
             if (Id != i && path.PathType != GraphLinks.PathType.NotConnected)
-                yield return new FactoryLink { DestinationId = i, Distance = path.Distance };
+                yield return new FactoryLink { DestinationId = i, Distance = path.Distance, FirstFactoryId = path.FirstFactoryId, PathType = path.PathType};
         }
     }
 
     public struct FactoryLink {
         public int Distance;
         public int DestinationId;
+        public int FirstFactoryId;
+        public GraphLinks.PathType PathType;
     }
 }
 
