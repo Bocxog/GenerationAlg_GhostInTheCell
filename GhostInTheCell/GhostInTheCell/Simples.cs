@@ -1,6 +1,7 @@
 ﻿
 
 public static class GraphLinks {
+    public static int MaxDistance { get; set; }
     public static int Size { get; set; }
     public static ShortestPath[,] Links { get; set; }
 

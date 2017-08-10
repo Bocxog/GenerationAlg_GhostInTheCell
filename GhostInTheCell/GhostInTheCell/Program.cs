@@ -60,6 +60,11 @@ class Player
                 }
 
             } while (addedLink);
+            GraphLinks.MaxDistance = 0;
+            for (int i = 0; i < factoryCount; i++) 
+                for (int j = 0; j < factoryCount; j++)
+                    if (GraphLinks.Links[i, j].PathType != GraphLinks.PathType.NotConnected)
+                        GraphLinks.MaxDistance = Math.Max(GraphLinks.MaxDistance, GraphLinks.Links[i, j].Distance);
         }
 
         // game loop
@@ -117,7 +122,7 @@ public static class DecisionHelper {
     }
 
     public static IEnumerable<IMove> ProposeMoves(this Graph graph) {
-        var stepsToPredict = graph.GetTroopSteps();
+        var stepsToPredict = Math.Max(graph.GetTroopSteps(), GraphLinks.MaxDistance);
         var factories = new List<FactoryStates>();
         var multiMove = new MultiMove();
         yield return multiMove;
@@ -185,6 +190,7 @@ public static class DecisionHelper {
                             factoryState.Enemies[i] = factoryState.Enemies[i + 1];
                     }
                 }
+                multiMove.AddMove(new Message($"FS #{factories.Count}: "  + string.Join(", ", factories.Select(x => $"({x.FactoryId})" + string.Join(".", x.Enemies.Select(t=> t ?? -1))))));
 
 
                 foreach (var factoryState in factories.OrderBy(x => {
@@ -204,7 +210,7 @@ public static class DecisionHelper {
                             var needed = factoryState.Enemies[i] ?? int.MaxValue;
                             for (int j = 0; j < myFactoriesForAttack.Count; j++) {
                                 var myFactory = myFactoriesForAttack[j];
-                                var sendedTroops = Math.Min(needed, myFactory.TroopsCanBeUsed); // TODO: захват нейтралов совместный.
+                                var sendedTroops = Math.Min(needed + 1, myFactory.TroopsCanBeUsed); // TODO: захват нейтралов совместный. +1 не совсем точно. нужно только для захвата но не деф.
                                 myFactory.TroopsCanBeUsed =
                                     graph.Factories[myFactory.Id].TroopsCanBeUsed = myFactory.TroopsCanBeUsed - sendedTroops;
 

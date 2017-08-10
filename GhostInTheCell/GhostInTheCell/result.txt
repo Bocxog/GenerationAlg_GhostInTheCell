@@ -269,6 +269,11 @@ class Player
                     }
                 }
             } while (addedLink);
+            GraphLinks.MaxDistance = 0;
+            for (int i = 0; i < factoryCount; i++) 
+                for (int j = 0; j < factoryCount; j++)
+                    if (GraphLinks.Links[i, j].PathType != GraphLinks.PathType.NotConnected)
+                        GraphLinks.MaxDistance = Math.Max(GraphLinks.MaxDistance, GraphLinks.Links[i, j].Distance);
         }
         // game loop
         while (true)
@@ -317,7 +322,7 @@ public static class DecisionHelper {
 //        return moves.GetBestCommand(graph);
     }
     public static IEnumerable<IMove> ProposeMoves(this Graph graph) {
-        var stepsToPredict = graph.GetTroopSteps();
+        var stepsToPredict = Math.Max(graph.GetTroopSteps(), 1);
         var factories = new List<FactoryStates>();
         var multiMove = new MultiMove();
         yield return multiMove;
@@ -381,12 +386,13 @@ public static class DecisionHelper {
                             factoryState.Enemies[i] = factoryState.Enemies[i + 1];
                     }
                 }
+                multiMove.AddMove(new Message($"FS #{factories.Count}: "  + string.Join(", ", factories.Select(x => $"({x.FactoryId})" + string.Join(".", x.Enemies.Select(t=> t ?? -1))))));
                 foreach (var factoryState in factories.OrderBy(x => {
                     var side = graph.Factories[x.FactoryId].Side;
                     return side == Side.MyOwn ? 0 : side == Side.Neutral ? 2 : 4;
                 })) {
                     multiMove.AddMove(new Message($"Fight for {factoryState.FactoryId}"));
-                    for (int i = 0; i < stepsToPredict; i++) {
+                    for (int i = 0; i < GraphLinks.MaxDistance; i++) {
                         //взять  мои фабрики на этом расстоянии
                         var myFactoriesForAttack = graph.Factories[factoryState.FactoryId].GetLinks()
                             .Where(x => x.Distance <= i && graph.Factories[x.DestinationId].Side == Side.MyOwn)
@@ -492,6 +498,7 @@ public static class DecisionHelper {
     }
 }
 public static class GraphLinks {
+    public static int MaxDistance { get; set; }
     public static int Size { get; set; }
     public static ShortestPath[,] Links { get; set; }
     public struct ShortestPath {
