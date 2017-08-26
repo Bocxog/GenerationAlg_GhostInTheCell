@@ -121,9 +121,7 @@ public static class DecisionHelper {
 
     }
 
-    public static void AddMovesForJobs(this Graph graph, List<IJob> jobs, MultiMove resultMove) {
-        
-    }
+    public static void AddMovesForJobs(this Graph graph, List<IJob> jobs, MultiMove resultMove) {}
 
     public static IEnumerable<IMove> ProposeMoves(this Graph graph) {
         var stepsToPredict = Math.Max(graph.GetTroopSteps(), GraphLinks.MaxDistance);

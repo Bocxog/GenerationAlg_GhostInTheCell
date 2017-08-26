@@ -448,9 +448,7 @@ public static class DecisionHelper {
         }
 //        return moves.GetBestCommand(graph);
     }
-    public static void AddMovesForJobs(this Graph graph, List<IJob> jobs, MultiMove resultMove) {
-Режим вывода команд на экран (ECHO) включен.
-    }
+    public static void AddMovesForJobs(this Graph graph, List<IJob> jobs, MultiMove resultMove) {}
     public static IEnumerable<IMove> ProposeMoves(this Graph graph) {
         var stepsToPredict = Math.Max(graph.GetTroopSteps(), GraphLinks.MaxDistance);
         var factories = new List<FactoryStates>();
