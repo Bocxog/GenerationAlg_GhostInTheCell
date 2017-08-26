@@ -8,17 +8,20 @@ public static class CostFunction {
     public static float EvalCostFunction(this Graph graph) {
         var factoriesMy = graph.Factories.Where(x => x.Side == Side.MyOwn).ToList();
         var factoriesEnemy = graph.Factories.Where(x => x.Side == Side.Enemy).ToList();
-        if (!factoriesEnemy.Any(x => x.Income > 0 || x.TroopsCount > 0))
+        if (!factoriesEnemy.Any(x => x.Income > 0 || x.TroopsCount > 0))//TODO: всё войско может быть в пути. хотя считаем в конце всех ходов...
             return float.MaxValue;
         return factoriesMy.Sum(x => x.EvalMyFactoryCostFunction(graph))
-               - factoriesEnemy.Sum(x => (x.Income + 0.01f)*(1 + x.TroopsCount*0.03f)) // With Neutrals
+               - factoriesEnemy.Sum(x => (x.Income + 0.01f + x.FactoryPotentialUpgradeCostFunction())*(1 + x.TroopsCount*0.03f)) // With Neutrals
             ;
     }
+    public static float FactoryPotentialUpgradeCostFunction(this Factory factory) {
+        return (factory.Income < 3 && factory.TroopsCount >= 10 ? 0.7f : 0);
+    }
     public static float EvalMyFactoryCostFunction(this Factory factory, Graph graph) {
-        float result = factory.Income;
-        if (factory.GetLinks().All(x => graph.Factories[x.DestinationId].Side == Side.MyOwn || graph.Factories[x.DestinationId].Income == 0))
+        float result = factory.Income + factory.FactoryPotentialUpgradeCostFunction();
+        if (factory.GetLinks().Where(x => x.PathType == GraphLinks.PathType.Direct).All(x => graph.Factories[x.DestinationId].Side == Side.MyOwn))
             result -= 0.5f*Math.Min(1, ((float) factory.TroopsCount)/30);
-        else if (!factory.GetLinks().Any(x => graph.Factories[x.DestinationId].Side == Side.Neutral && graph.Factories[x.DestinationId].Income > 0)) {
+        else if (!factory.GetLinks().Any(x => graph.Factories[x.DestinationId].Side == Side.Neutral && graph.Factories[x.DestinationId].Income > 0)) {//TODO: change if condition
             var enemyDistance = factory.GetLinks().Where(x => graph.Factories[x.DestinationId].Side == Side.Enemy).DefaultIfEmpty().Min(x => x.Distance); // TODO: add 2 step compare
             var penalty = factory.TroopsCount*(enemyDistance > 15 ? 0.3f : enemyDistance > 10 ? 0.085f : 0);
             result -= penalty;
@@ -150,10 +153,92 @@ public class Graph {
         GraphLinks.Links[f2, f1] = new GraphLinks.ShortestPath { Distance = cost, FirstFactoryId = f1, PathType = GraphLinks.PathType.Direct };
     }
 }
+public interface IJob {
+    void EvaluateInnerState(Graph graphToCopy);
+    int GetPriorityValue();
+    IMove GetMove();
+}
+public class AtackFactory : IJob {
+    private DecisionHelper.FactoryStates FactoryState;
+    private int StepsToPredict;
+    public AtackFactory(DecisionHelper.FactoryStates factoryState, int stepsToPredict) {
+        FactoryState = factoryState;
+        StepsToPredict = stepsToPredict;
+    }
+    private Graph graph = null;
+    private IMove move = null;
+    private int priorityValue = int.MinValue;
+    public void EvaluateInnerState(Graph graphToCopy) {
+        graph = Graph.GetCopy(graphToCopy);
+        move = EvaluateMove();
+    }
+    public int GetPriorityValue() {return priorityValue;}
+    public IMove GetMove() {
+        return move;
+    }
+    private IMove EvaluateMove() {
+//        throw new NotImplementedException();
+        var multiMove = new MultiMove();
+        multiMove.AddMove(new Message($"Fight for {FactoryState.FactoryId}"));
+        var moveTroops = new MoveTroops();
+        multiMove.AddMove(moveTroops);
+        for (int i = 0; i < StepsToPredict; i++) {
+            //взять  мои фабрики на этом расстоянии
+            var myFactoriesForAttack = graph.Factories[FactoryState.FactoryId].GetLinks()
+                .Where(x => x.Distance <= i && graph.Factories[x.DestinationId].Side == Side.MyOwn)
+                .Select(x => graph.Factories[x.DestinationId])
+                .ToList();
+            //если могут захватить - ура
+            if (myFactoriesForAttack.Any() && myFactoriesForAttack.Sum(x => x.TroopsCanBeUsed) > FactoryState.Enemies[i]) {
+                int troopsUsed, needed;
+                needed = troopsUsed = FactoryState.Enemies[i] ?? int.MaxValue;
+                foreach (var myFactory in myFactoriesForAttack) {
+//TODO: sort factories by distance or smth else
+                    var sendedTroops = Math.Min(needed + 1, myFactory.TroopsCanBeUsed); // TODO: захват нейтралов совместный. +1 не совсем точно. нужно только для захвата но не деф.
+                    myFactory.TroopsCanBeUsed =
+                        graph.Factories[myFactory.Id].TroopsCanBeUsed = myFactory.TroopsCanBeUsed - sendedTroops;
+                    var shortestPath = GraphLinks.Links[myFactory.Id, FactoryState.FactoryId];
+                    moveTroops.AddTroop(new Troop {
+                        Dst = FactoryState.FactoryId,
+                        DstInCommand = shortestPath.FirstFactoryId,
+                        Side = Side.MyOwn,
+                        Remaining = shortestPath.Distance + 1,
+                        Src = myFactory.Id,
+                        Size = sendedTroops
+                    });
+                    needed -= sendedTroops;
+                    if (needed <= 0)
+                        break;
+                }
+                priorityValue =
+                    5*graph.Factories[FactoryState.FactoryId].Income*(graph.Factories[FactoryState.FactoryId].Side == Side.Neutral ? 1 : 2)
+                    - troopsUsed/10
+                    - (int) Math.Pow((int) (i/5), 2);
+                break;
+            }
+        }
+        return multiMove;
+    }
+}
+public class UpgradeFactoryJob : IJob {
+    private int FactoryId;
+    private MultiMove move;
+    public UpgradeFactoryJob(int factoryId) {
+        FactoryId = factoryId;
+        move = new MultiMove();
+        move.AddMove(new UpgradeFactory(FactoryId));
+    }
+    public void EvaluateInnerState(Graph graphToCopy) { }
+    public int GetPriorityValue() { return 10; }
+    public IMove GetMove() {
+        return move;
+    }
+}
 public interface IMove {
     int StepsExecution();
     void ChangeGraph(Graph graph);
     string GetConsoleCommand();
+    IMove GetCopy();
 }
 public class MultiMove : IMove {
     protected ICollection<IMove> moves;
@@ -174,6 +259,34 @@ public class MultiMove : IMove {
     public string GetConsoleCommand() {
         return string.Join(";", moves.Select(x => x.GetConsoleCommand()));
     }
+    public IMove GetCopy() {
+        var result = new MultiMove();
+        foreach (var move in moves) {
+            result.AddMove(move.GetCopy());
+        }
+        return result;
+    }
+}
+public class UpgradeFactory : IMove {
+    private readonly int FactoryId;
+    public UpgradeFactory(int factoryId) {
+        FactoryId = factoryId;
+    }
+    public int StepsExecution() {return 11;}
+    public void ChangeGraph(Graph graph) {
+        var factory = graph.Factories[FactoryId];
+        if (factory.TroopsCount < 10)
+            throw new NotSupportedException("Invalid command");
+        factory.TroopsCount -= 10;
+        factory.TroopsCanBeUsed -= 10;
+        factory.Income++;
+    }
+    public string GetConsoleCommand() {
+        return "INC " + FactoryId;
+    }
+    public IMove GetCopy() {
+        return new UpgradeFactory(FactoryId);
+    }
 }
 public class MoveTroops : IMove {
     protected ICollection<Troop> Troops;
@@ -190,17 +303,28 @@ public class MoveTroops : IMove {
     public string GetConsoleCommand() {
         return string.Join(";", Troops.Select(x => string.Format("MOVE {0} {1} {2}", x.Src, x.DstInCommand ?? x.Dst, x.Size))); //MOVE source destination cyborgCount
     }
+    public IMove GetCopy() {
+        return new MoveTroops(Troops.Select(x=> Troop.GetCopy(x)));
+    }
     public int StepsExecution() {
         return Troops.Any() ? Troops.Max(x => x.Remaining) : 0;
     }
     public void ChangeGraph(Graph graph) {
         graph.Troops.AddRange(Troops);
+        foreach (var troop in Troops) {
+            var factory = graph.Factories[troop.Src];
+            factory.TroopsCanBeUsed -= troop.Size;
+            factory.TroopsCount -= troop.Size;
+        }
     }
 }
 public class Hold : IMove {
     public void ChangeGraph(Graph graph) {}
     public virtual string GetConsoleCommand() {
         return "WAIT";
+    }
+    public virtual IMove GetCopy() {
+        return new Hold();
     }
     public int StepsExecution() {
         return 1;
@@ -211,13 +335,16 @@ public class Message : Hold {
     public Message(string message) {
         this._message = message.Replace(';', '_');
     }
+    public override IMove GetCopy() {
+        return new Message(_message);
+    }
     public override string GetConsoleCommand() {
         return "MSG " + _message;
     }
 }
 /**
  * Auto-generated code below aims at helping you parse
- * the standard input according to the problem statement.
+ * the standard input according to the problem statement.    
  **/
 class Player
 {
@@ -321,8 +448,11 @@ public static class DecisionHelper {
         }
 //        return moves.GetBestCommand(graph);
     }
+    public static void AddMovesForJobs(this Graph graph, List<IJob> jobs, MultiMove resultMove) {
+����� �뢮�� ������ �� ��࠭ (ECHO) ����祭.
+    }
     public static IEnumerable<IMove> ProposeMoves(this Graph graph) {
-        var stepsToPredict = Math.Max(graph.GetTroopSteps(), 1);
+        var stepsToPredict = Math.Max(graph.GetTroopSteps(), GraphLinks.MaxDistance);
         var factories = new List<FactoryStates>();
         var multiMove = new MultiMove();
         yield return multiMove;
@@ -353,7 +483,6 @@ public static class DecisionHelper {
                             Remaining = linkTo.Distance + 1,
                             Size = availableTroops
                         });
-                        myFactory.TroopsCount -= availableTroops;
                     }
                 }
                 move.ChangeGraph(testGraph);
@@ -364,7 +493,7 @@ public static class DecisionHelper {
             }
         }
         {
-            var result = new MoveTroops();
+            var jobs = new List<IJob>();
             // Get moves to minimum attack
             if (factories.Any()) {
                 multiMove.AddMove(new Message("Init Atack/Defense"));
@@ -386,44 +515,23 @@ public static class DecisionHelper {
                             factoryState.Enemies[i] = factoryState.Enemies[i + 1];
                     }
                 }
-                multiMove.AddMove(new Message($"FS #{factories.Count}: "  + string.Join(", ", factories.Select(x => $"({x.FactoryId})" + string.Join(".", x.Enemies.Select(t=> t ?? -1))))));
-                foreach (var factoryState in factories.OrderBy(x => {
-                    var side = graph.Factories[x.FactoryId].Side;
-                    return side == Side.MyOwn ? 0 : side == Side.Neutral ? 2 : 4;
-                })) {
-                    multiMove.AddMove(new Message($"Fight for {factoryState.FactoryId}"));
-                    for (int i = 0; i < GraphLinks.MaxDistance; i++) {
-                        //взять  мои фабрики на этом расстоянии
-                        var myFactoriesForAttack = graph.Factories[factoryState.FactoryId].GetLinks()
-                            .Where(x => x.Distance <= i && graph.Factories[x.DestinationId].Side == Side.MyOwn)
-                            .Select(x => graph.Factories[x.DestinationId])
-                            .ToList();
-                        //если могут захватить - ура
-                        if (myFactoriesForAttack.Any() && myFactoriesForAttack.Sum(x => x.TroopsCanBeUsed) > factoryState.Enemies[i]) {
-                            var needed = factoryState.Enemies[i] ?? int.MaxValue;
-                            for (int j = 0; j < myFactoriesForAttack.Count; j++) {
-                                var myFactory = myFactoriesForAttack[j];
-                                var sendedTroops = Math.Min(needed, myFactory.TroopsCanBeUsed); // TODO: захват нейтралов совместный.
-                                myFactory.TroopsCanBeUsed =
-                                    graph.Factories[myFactory.Id].TroopsCanBeUsed = myFactory.TroopsCanBeUsed - sendedTroops;
-                                var shortestPath = GraphLinks.Links[myFactory.Id, factoryState.FactoryId];
-                                result.AddTroop(new Troop {
-                                    Dst = factoryState.FactoryId,
-                                    DstInCommand = shortestPath.FirstFactoryId,
-                                    Side = Side.MyOwn,
-                                    Remaining = shortestPath.Distance + 1,
-                                    Src = myFactory.Id,
-                                    Size = sendedTroops
-                                });
-                                needed -= sendedTroops;
-                                if (needed <= 0)
-                                    break;
-                            }
-                            break;
-                        }
-                    }
-                }
-                multiMove.AddMove(result);
+                //multiMove.AddMove(new Message($"FS #{factories.Count}: "  + string.Join(", ", factories.Select(x => $"({x.FactoryId})" + string.Join(".", x.Enemies.Select(t=> t ?? -1))))));
+                factories.ForEach(x => { jobs.Add(new AtackFactory(x, stepsToPredict));});
+            }
+            jobs.AddRange(
+                graph.Factories
+                    .Where(x => x.TroopsCount >= 10 && x.Side == Side.MyOwn && x.Income < 3 && x.TroopsCanBeUsed >= 9) //TODO: condition can be changed, income check when bomb
+                    .Select(factoryToUpgrade => new UpgradeFactoryJob(factoryToUpgrade.Id))
+                );
+            //Evaluate jobs
+            while (true) {
+                jobs.ForEach(x => { x.EvaluateInnerState(graph); });
+                var first = jobs.OrderByDescending(x => x.GetPriorityValue()).FirstOrDefault();
+                if (first == null || first.GetPriorityValue() == int.MinValue) break;
+                var jobMove = first.GetMove();
+                jobMove.ChangeGraph(graph);
+                multiMove.AddMove(jobMove);
+                jobs.Remove(first);
                 yield return multiMove;
             }
             multiMove.AddMove(new Message("Init basic moves"));
@@ -476,6 +584,7 @@ public static class DecisionHelper {
         string bestMove = null;
         var stepsToPredict = graph.GetTroopSteps();
         foreach (var move in moves) {
+            //TODO: учитывать реальный инком фабрики а не 0 после бомбы.
             var estimate = move.GetEstimate(Graph.GetCopy(graph), Math.Max(stepsToPredict, move.StepsExecution()));
             if (estimate > bestEstimate) {
                 bestEstimate = estimate;

@@ -1,10 +1,12 @@
-﻿using System.Collections.Generic;using System.Linq;
+﻿using System;using System.Collections.Generic;using System.Linq;
 
 
 public interface IMove {
     int StepsExecution();
     void ChangeGraph(Graph graph);
     string GetConsoleCommand();
+
+    IMove GetCopy();
 }
 
 public class MultiMove : IMove {
@@ -30,6 +32,41 @@ public class MultiMove : IMove {
     public string GetConsoleCommand() {
         return string.Join(";", moves.Select(x => x.GetConsoleCommand()));
     }
+
+    public IMove GetCopy() {
+        var result = new MultiMove();
+        foreach (var move in moves) {
+            result.AddMove(move.GetCopy());
+        }
+        return result;
+    }
+}
+
+public class UpgradeFactory : IMove {
+    private readonly int FactoryId;
+    public UpgradeFactory(int factoryId) {
+        FactoryId = factoryId;
+    }
+
+    public int StepsExecution() {return 11;}
+
+    public void ChangeGraph(Graph graph) {
+        var factory = graph.Factories[FactoryId];
+        if (factory.TroopsCount < 10)
+            throw new NotSupportedException("Invalid command");
+
+        factory.TroopsCount -= 10;
+        factory.TroopsCanBeUsed -= 10;
+        factory.Income++;
+    }
+
+    public string GetConsoleCommand() {
+        return "INC " + FactoryId;
+    }
+
+    public IMove GetCopy() {
+        return new UpgradeFactory(FactoryId);
+    }
 }
 
 public class MoveTroops : IMove {
@@ -53,12 +90,21 @@ public class MoveTroops : IMove {
         return string.Join(";", Troops.Select(x => string.Format("MOVE {0} {1} {2}", x.Src, x.DstInCommand ?? x.Dst, x.Size))); //MOVE source destination cyborgCount
     }
 
+    public IMove GetCopy() {
+        return new MoveTroops(Troops.Select(x=> Troop.GetCopy(x)));
+    }
+
     public int StepsExecution() {
         return Troops.Any() ? Troops.Max(x => x.Remaining) : 0;
     }
 
     public void ChangeGraph(Graph graph) {
         graph.Troops.AddRange(Troops);
+        foreach (var troop in Troops) {
+            var factory = graph.Factories[troop.Src];
+            factory.TroopsCanBeUsed -= troop.Size;
+            factory.TroopsCount -= troop.Size;
+        }
     }
 }
 
@@ -67,6 +113,10 @@ public class Hold : IMove {
 
     public virtual string GetConsoleCommand() {
         return "WAIT";
+    }
+
+    public virtual IMove GetCopy() {
+        return new Hold();
     }
 
     public int StepsExecution() {
@@ -80,6 +130,9 @@ public class Message : Hold {
         this._message = message.Replace(';', '_');
     }
 
+    public override IMove GetCopy() {
+        return new Message(_message);
+    }
     public override string GetConsoleCommand() {
         return "MSG " + _message;
     }

@@ -62,6 +62,7 @@
     <Compile Include="CostFunction.cs" />
     <Compile Include="Factory.cs" />
     <Compile Include="Graph.cs" />
+    <Compile Include="Issue.cs" />
     <Compile Include="Move.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
