@@ -79,14 +79,18 @@ public class AtackFactory : IJob {
 public class UpgradeFactoryJob : IJob {
     private int FactoryId;
     private MultiMove move;
+    private bool moveAvailable;
+
     public UpgradeFactoryJob(int factoryId) {
         FactoryId = factoryId;
         move = new MultiMove();
         move.AddMove(new UpgradeFactory(FactoryId));
     }
 
-    public void EvaluateInnerState(Graph graphToCopy) { }
-    public int GetPriorityValue() { return 10; }
+    public void EvaluateInnerState(Graph graphToCopy) {
+        moveAvailable = graphToCopy.Factories[FactoryId].TroopsCount >= 10;
+    }
+    public int GetPriorityValue() { return moveAvailable ? 10 : int.MinValue; }
 
     public IMove GetMove() {
         return move;

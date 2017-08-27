@@ -102,7 +102,7 @@ class Player
 
 public static class DecisionHelper {
     public static string GetNextBestMove(this Graph graph) {
-        return graph.ProposeMoves().GetBestCommand(graph);
+        return graph.ProposeMoves().GetBestCommand(Graph.GetCopy(graph));
 
 
         var moves = new List<IMove> {new Hold()};
