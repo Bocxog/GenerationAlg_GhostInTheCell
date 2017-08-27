@@ -18,15 +18,24 @@ public static class CostFunction {
         return (factory.Income < 3 && factory.TroopsCount >= 10 ? 0.7f : 0);
     }
     public static float EvalMyFactoryCostFunction(this Factory factory, Graph graph) {
-        float result = factory.Income + factory.FactoryPotentialUpgradeCostFunction();
-        if (factory.GetLinks().Where(x => x.PathType == GraphLinks.PathType.Direct).All(x => graph.Factories[x.DestinationId].Side == Side.MyOwn))
-            result -= 0.5f*Math.Min(1, ((float) factory.TroopsCount)/30);
-        else if (!factory.GetLinks().Any(x => graph.Factories[x.DestinationId].Side == Side.Neutral && graph.Factories[x.DestinationId].Income > 0)) {//TODO: change if condition
+        float result = (factory.Income + factory.FactoryPotentialUpgradeCostFunction()) * (1 + factory.TroopsCount * 0.03f);
+        Logger.ErrorLogInline(LogReportLevel.InnerInlineMoveCost,$"F:{factory.Id}", result);
+//        if (factory.GetLinks().Where(x => x.PathType == GraphLinks.PathType.Direct).All(x => graph.Factories[x.DestinationId].Side == Side.MyOwn))
+//            result -= 0.5f*Math.Min(1, ((float) factory.TroopsCount)/30);
+//        else 
+        if (!factory.GetLinks().Any(x => graph.Factories[x.DestinationId].Side == Side.Neutral && graph.Factories[x.DestinationId].Income > 0)) {//TODO: change if condition
             var enemyDistance = factory.GetLinks().Where(x => graph.Factories[x.DestinationId].Side == Side.Enemy).DefaultIfEmpty().Min(x => x.Distance); // TODO: add 2 step compare
             var penalty = factory.TroopsCount*(enemyDistance > 15 ? 0.3f : enemyDistance > 10 ? 0.085f : 0);
+            Logger.ErrorLogInline(LogReportLevel.InnerInlineMoveCost, $"P:{penalty}");
             result -= penalty;
         }
         return result;
+    }
+    public static int GetJobEstimatePriority(int incomeIncrease, int troopsUsed, int steps, int bonus = 0) {
+        return 5 * incomeIncrease
+               - troopsUsed / 10
+               - (int)Math.Pow(steps, 2)/5
+               + bonus;
     }
 }
 public class Troop {
@@ -77,7 +86,7 @@ public class Graph {
     public List<Troop> Troops { get; private set; }
     public static Graph GetCopy(Graph obj) {
         var copy = new Graph();
-        copy.Factories = obj.Factories.Select(x => new Factory(x.Id) { Income = x.Income, Side = x.Side, TroopsCount = x.TroopsCount }).ToArray();
+        copy.Factories = obj.Factories.Select(x => new Factory(x.Id) { Income = x.Income, Side = x.Side, TroopsCount = x.TroopsCount, TroopsCanBeUsed = x.TroopsCanBeUsed}).ToArray();
         copy.Troops = obj.Troops.Select(x => Troop.GetCopy(x)).ToList();
         return copy;
     }
@@ -172,7 +181,10 @@ public class AtackFactory : IJob {
         graph = Graph.GetCopy(graphToCopy);
         move = EvaluateMove();
     }
-    public int GetPriorityValue() {return priorityValue;}
+    public int GetPriorityValue() {
+        Logger.ErrorLog("Cost: " + priorityValue + " ACT: " + move.GetConsoleCommand(), LogReportLevel.InnerJobCost);
+        return priorityValue;
+    }
     public IMove GetMove() {
         return move;
     }
@@ -210,10 +222,9 @@ public class AtackFactory : IJob {
                     if (needed <= 0)
                         break;
                 }
-                priorityValue =
-                    5*graph.Factories[FactoryState.FactoryId].Income*(graph.Factories[FactoryState.FactoryId].Side == Side.Neutral ? 1 : 2)
-                    - troopsUsed/10
-                    - (int) Math.Pow((int) (i/5), 2);
+                priorityValue = CostFunction.GetJobEstimatePriority(
+                    graph.Factories[FactoryState.FactoryId].Income*(graph.Factories[FactoryState.FactoryId].Side == Side.Neutral ? 1 : 2),
+                    troopsUsed, i);
                 break;
             }
         }
@@ -223,13 +234,21 @@ public class AtackFactory : IJob {
 public class UpgradeFactoryJob : IJob {
     private int FactoryId;
     private MultiMove move;
+    private bool moveAvailable;
     public UpgradeFactoryJob(int factoryId) {
         FactoryId = factoryId;
         move = new MultiMove();
         move.AddMove(new UpgradeFactory(FactoryId));
     }
-    public void EvaluateInnerState(Graph graphToCopy) { }
-    public int GetPriorityValue() { return 10; }
+    public void EvaluateInnerState(Graph graphToCopy) {
+        moveAvailable = graphToCopy.Factories[FactoryId].TroopsCount >= 10;
+    }
+    public int GetPriorityValue() {
+        if (!moveAvailable) return int.MinValue;
+        var result = CostFunction.GetJobEstimatePriority(1, 10, 10, 15);
+        Logger.ErrorLog("Cost: " + result + " ACT: " + move.GetConsoleCommand(), LogReportLevel.InnerJobCost);
+        return result;
+    }
     public IMove GetMove() {
         return move;
     }
@@ -433,7 +452,7 @@ class Player
 }
 public static class DecisionHelper {
     public static string GetNextBestMove(this Graph graph) {
-        return graph.ProposeMoves().GetBestCommand(graph);
+        return graph.ProposeMoves().GetBestCommand(Graph.GetCopy(graph));
         var moves = new List<IMove> {new Hold()};
         foreach (var factory in graph.Factories.Where(x => x.TroopsCount > 0 && x.Side == Side.MyOwn)) {
             foreach (var link in factory.GetLinks()) {
@@ -527,6 +546,7 @@ public static class DecisionHelper {
                 var first = jobs.OrderByDescending(x => x.GetPriorityValue()).FirstOrDefault();
                 if (first == null || first.GetPriorityValue() == int.MinValue) break;
                 var jobMove = first.GetMove();
+                Logger.ErrorLog("Best job Cost: " + first.GetPriorityValue() + " ACT: " + jobMove.GetConsoleCommand(), LogReportLevel.BestJobCost);
                 jobMove.ChangeGraph(graph);
                 multiMove.AddMove(jobMove);
                 jobs.Remove(first);
@@ -584,11 +604,13 @@ public static class DecisionHelper {
         foreach (var move in moves) {
             //TODO: учитывать реальный инком фабрики а не 0 после бомбы.
             var estimate = move.GetEstimate(Graph.GetCopy(graph), Math.Max(stepsToPredict, move.StepsExecution()));
+            Logger.ErrorLog("Move Cost: "+ estimate+" ACT:" + move.GetConsoleCommand(),LogReportLevel.EachMoveCost);
             if (estimate > bestEstimate) {
                 bestEstimate = estimate;
                 bestMove = move.GetConsoleCommand();
             }
         }
+        Logger.ErrorLog("Best Move Cost: " + bestEstimate + " ACT:" + bestMove, LogReportLevel.BestMoveCost);
         return bestMove;
 //        return $"MSG {i};" + string.Join(";", s) + ";" + bestMove;
     }
@@ -623,4 +645,34 @@ public enum Side {
     MyOwn = 1,
     Neutral = 0,
     Enemy = -1
+}
+[Flags]
+public enum LogReportLevel {
+    None = 0,
+    InnerJobCost = 1 << 0,    
+    BestJobCost = 1 << 1,    
+    EachMoveCost = 1 << 2,    
+    BestMoveCost = 1 << 3,
+    InnerInlineMoveCost = 1 << 4,    
+//    InnerJobCostValue = 1 << 5,    
+//    InnerJobCostValue = 1 << 6,    
+//    InnerJobCostValue = 1 << 7,    
+    All = InnerJobCost | BestJobCost | EachMoveCost | BestMoveCost | InnerInlineMoveCost
+}
+public static class Logger {
+    public static void ErrorLog(string text, LogReportLevel level) {
+        if ((level & LogLevel) == 0) return;
+        Console.Error.WriteLine(text);
+    }
+    public static void ErrorLogInline(LogReportLevel level, params object[] text) {
+        if ((level & LogLevel) == 0) return;
+        Console.Error.Write(string.Join("|",text.ToString()));
+    }
+    private static LogReportLevel LogLevel =
+        LogReportLevel.InnerJobCost |
+        LogReportLevel.BestJobCost |
+        LogReportLevel.EachMoveCost |
+        LogReportLevel.InnerInlineMoveCost |
+        LogReportLevel.BestMoveCost |
+        0;
 }

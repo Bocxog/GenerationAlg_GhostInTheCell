@@ -17,15 +17,24 @@ public static class CostFunction {
     }
 
     public static float EvalMyFactoryCostFunction(this Factory factory, Graph graph) {
-        float result = factory.Income + factory.FactoryPotentialUpgradeCostFunction();
-
-        if (factory.GetLinks().Where(x => x.PathType == GraphLinks.PathType.Direct).All(x => graph.Factories[x.DestinationId].Side == Side.MyOwn))
-            result -= 0.5f*Math.Min(1, ((float) factory.TroopsCount)/30);
-        else if (!factory.GetLinks().Any(x => graph.Factories[x.DestinationId].Side == Side.Neutral && graph.Factories[x.DestinationId].Income > 0)) {//TODO: change if condition
+        float result = (factory.Income + factory.FactoryPotentialUpgradeCostFunction()) * (1 + factory.TroopsCount * 0.03f);
+        Logger.ErrorLogInline(LogReportLevel.InnerInlineMoveCost,$"F:{factory.Id}", result);
+//        if (factory.GetLinks().Where(x => x.PathType == GraphLinks.PathType.Direct).All(x => graph.Factories[x.DestinationId].Side == Side.MyOwn))
+//            result -= 0.5f*Math.Min(1, ((float) factory.TroopsCount)/30);
+//        else 
+        if (!factory.GetLinks().Any(x => graph.Factories[x.DestinationId].Side == Side.Neutral && graph.Factories[x.DestinationId].Income > 0)) {//TODO: change if condition
             var enemyDistance = factory.GetLinks().Where(x => graph.Factories[x.DestinationId].Side == Side.Enemy).DefaultIfEmpty().Min(x => x.Distance); // TODO: add 2 step compare
             var penalty = factory.TroopsCount*(enemyDistance > 15 ? 0.3f : enemyDistance > 10 ? 0.085f : 0);
+            Logger.ErrorLogInline(LogReportLevel.InnerInlineMoveCost, $"P:{penalty}");
             result -= penalty;
         }
+        Logger.ErrorLogInline(LogReportLevel.InnerInlineMoveCost,"+");
         return result;
+    }
+    public static int GetJobEstimatePriority(int incomeIncrease, int troopsUsed, int steps, int bonus = 0) {
+        return 5 * incomeIncrease
+               - troopsUsed / 10
+               - (int)Math.Pow(steps, 2)/5
+               + bonus;
     }
 }

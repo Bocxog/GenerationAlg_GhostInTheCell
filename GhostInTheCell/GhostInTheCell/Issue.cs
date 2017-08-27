@@ -22,7 +22,11 @@ public class AtackFactory : IJob {
         graph = Graph.GetCopy(graphToCopy);
         move = EvaluateMove();
     }
-    public int GetPriorityValue() {return priorityValue;}
+
+    public int GetPriorityValue() {
+        Logger.ErrorLog("Cost: " + priorityValue + " ACT: " + move.GetConsoleCommand(), LogReportLevel.InnerJobCost);
+        return priorityValue;
+    }
 
     public IMove GetMove() {
         return move;
@@ -65,10 +69,9 @@ public class AtackFactory : IJob {
                         break;
                 }
 
-                priorityValue =
-                    5*graph.Factories[FactoryState.FactoryId].Income*(graph.Factories[FactoryState.FactoryId].Side == Side.Neutral ? 1 : 2)
-                    - troopsUsed/10
-                    - (int) Math.Pow((int) (i/5), 2);
+                priorityValue = CostFunction.GetJobEstimatePriority(
+                    graph.Factories[FactoryState.FactoryId].Income*(graph.Factories[FactoryState.FactoryId].Side == Side.Neutral ? 1 : 2),
+                    troopsUsed, i);
 
                 break;
             }
@@ -90,7 +93,13 @@ public class UpgradeFactoryJob : IJob {
     public void EvaluateInnerState(Graph graphToCopy) {
         moveAvailable = graphToCopy.Factories[FactoryId].TroopsCount >= 10;
     }
-    public int GetPriorityValue() { return moveAvailable ? 10 : int.MinValue; }
+
+    public int GetPriorityValue() {
+        if (!moveAvailable) return int.MinValue;
+        var result = CostFunction.GetJobEstimatePriority(1, 10, 10, 15);
+        Logger.ErrorLog("Cost: " + result + " ACT: " + move.GetConsoleCommand(), LogReportLevel.InnerJobCost);
+        return result;
+    }
 
     public IMove GetMove() {
         return move;

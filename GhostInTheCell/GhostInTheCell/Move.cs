@@ -99,8 +99,9 @@ public class MoveTroops : IMove {
     }
 
     public void ChangeGraph(Graph graph) {
-        graph.Troops.AddRange(Troops);
-        foreach (var troop in Troops) {
+        var troopsToGraph = Troops.Select(x => Troop.GetCopy(x)).ToList();
+        graph.Troops.AddRange(troopsToGraph);
+        foreach (var troop in troopsToGraph) {
             var factory = graph.Factories[troop.Src];
             factory.TroopsCanBeUsed -= troop.Size;
             factory.TroopsCount -= troop.Size;

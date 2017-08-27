@@ -204,12 +204,15 @@ public static class DecisionHelper {
                 );
 
             //Evaluate jobs
+            var jobGraph = Graph.GetCopy(graph);
             while (true) {
-                jobs.ForEach(x => { x.EvaluateInnerState(graph); });
+                jobs.ForEach(x => { x.EvaluateInnerState(jobGraph); });
                 var first = jobs.OrderByDescending(x => x.GetPriorityValue()).FirstOrDefault();
                 if (first == null || first.GetPriorityValue() == int.MinValue) break;
                 var jobMove = first.GetMove();
-                jobMove.ChangeGraph(graph);
+                Logger.ErrorLog("Best job Cost: " + first.GetPriorityValue() + " ACT: " + jobMove.GetConsoleCommand(), LogReportLevel.BestJobCost);
+
+                jobMove.ChangeGraph(jobGraph);
                 multiMove.AddMove(jobMove);
                 jobs.Remove(first);
                 yield return multiMove;
@@ -270,12 +273,14 @@ public static class DecisionHelper {
         var stepsToPredict = graph.GetTroopSteps();
         foreach (var move in moves) {
             //TODO: учитывать реальный инком фабрики а не 0 после бомбы.
-            var estimate = move.GetEstimate(Graph.GetCopy(graph), Math.Max(stepsToPredict, move.StepsExecution()));
+            var estimate = move.GetEstimate(Graph.GetCopy(graph), Math.Max(GraphLinks.MaxDistance, Math.Max(stepsToPredict, move.StepsExecution())));
+            Logger.ErrorLog("Move Cost: "+ estimate+" ACT:" + move.GetConsoleCommand(),LogReportLevel.EachMoveCost);
             if (estimate > bestEstimate) {
                 bestEstimate = estimate;
                 bestMove = move.GetConsoleCommand();
             }
         }
+        Logger.ErrorLog("Best Move Cost: " + bestEstimate + " ACT:" + bestMove, LogReportLevel.BestMoveCost);
         return bestMove;
 //        return $"MSG {i};" + string.Join(";", s) + ";" + bestMove;
     }
