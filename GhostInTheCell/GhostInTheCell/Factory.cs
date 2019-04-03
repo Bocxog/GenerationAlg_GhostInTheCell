@@ -30,6 +30,7 @@ public class Factory {
     public int Income { get; set; }
     public Side Side { get; set; }
     public int TroopsCount { get; set; }
+    public int InactivityDaysLeft { get; set; } /*Due to bomb explosion*/
 
     public int TroopsCanBeUsed { get; set; }
 

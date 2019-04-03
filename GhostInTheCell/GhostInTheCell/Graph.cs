@@ -5,16 +5,21 @@ public class GraphEstimator : Graph {}
 public class Graph {
     public Factory[] Factories { get; private set; }
     public List<Troop> Troops { get; private set; }
+    public int CurrentGameTick { get; set; }
 
     public static Graph GetCopy(Graph obj) {
         var copy = new Graph();
-        copy.Factories = obj.Factories.Select(x => new Factory(x.Id) { Income = x.Income, Side = x.Side, TroopsCount = x.TroopsCount, TroopsCanBeUsed = x.TroopsCanBeUsed}).ToArray();
+        copy.Factories = obj.Factories.Select(x => new Factory(x.Id) { Income = x.Income, Side = x.Side, TroopsCount = x.TroopsCount, TroopsCanBeUsed = x.TroopsCanBeUsed, InactivityDaysLeft = x.InactivityDaysLeft}).ToArray();
         copy.Troops = obj.Troops.Select(x => Troop.GetCopy(x)).ToList();
+        copy.CurrentGameTick = obj.CurrentGameTick;
         return copy;
     }
 
     public void DoNextMove() {
-        foreach (var factory in Factories.Where(x => x.Side != Side.Neutral)) { factory.TroopsCount += factory.Income; }
+        foreach (var factory in Factories.Where(x => x.Side != Side.Neutral)) {
+            if (factory.InactivityDaysLeft <= 0) factory.TroopsCount += factory.Income;
+            else factory.InactivityDaysLeft--;
+        }
         foreach (var troop in Troops) {troop.Remaining--;}
         foreach (var troopGroup in Troops.Where(x => x.Remaining == 0).GroupBy(x => x.Dst)) {
             var factory = Factories[troopGroup.First().Dst];
@@ -39,7 +44,7 @@ public class Graph {
             }
         }
         Troops = Troops.Where(x => x.Remaining > 0).ToList();
-
+        CurrentGameTick++;
 
         //        foreach (var factory in Factories) {
         //            if (factory.Side == Side.Neutral) {
@@ -56,7 +61,7 @@ public class Graph {
         Factories = new Factory[GraphLinks.Size];
     }
 
-    public void ClearTroops() {
+    public void ClearMovedEntities() {
         Troops.Clear();
     }
 
@@ -83,11 +88,12 @@ public class Graph {
         return fact;
     }
 
-    public void RefreshFactoryInfo(int id, int side, int income, int troopsCount) {
+    public void RefreshFactoryInfo(int id, int side, int income, int troopsCount, int bombDaysLeft) {
         var f = Factories[id];
         f.Income = income;
-        f.Side = (Side)side;
+        f.Side = (Side) side;
         f.TroopsCount = troopsCount;
+        f.InactivityDaysLeft = bombDaysLeft;
     }
 
     public void AddLink(int f1, int f2, int cost) {

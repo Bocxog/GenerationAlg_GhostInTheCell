@@ -29,6 +29,7 @@ public static class CostFunction {
             Logger.ErrorLogInline(LogReportLevel.InnerInlineMoveCost, $"P:{penalty}");
             result -= penalty;
         }
+        Logger.ErrorLogInline(LogReportLevel.InnerInlineMoveCost,"+");
         return result;
     }
     public static int GetJobEstimatePriority(int incomeIncrease, int troopsUsed, int steps, int bonus = 0) {
@@ -65,6 +66,7 @@ public class Factory {
     public int Income { get; set; }
     public Side Side { get; set; }
     public int TroopsCount { get; set; }
+    public int InactivityDaysLeft { get; set; }
     public int TroopsCanBeUsed { get; set; }
     public IEnumerable<FactoryLink> GetLinks() {
         for (int i = 0; i < GraphLinks.Size; i++) {
@@ -84,14 +86,19 @@ public class GraphEstimator : Graph {}
 public class Graph {
     public Factory[] Factories { get; private set; }
     public List<Troop> Troops { get; private set; }
+    public int CurrentGameTick { get; set; }
     public static Graph GetCopy(Graph obj) {
         var copy = new Graph();
-        copy.Factories = obj.Factories.Select(x => new Factory(x.Id) { Income = x.Income, Side = x.Side, TroopsCount = x.TroopsCount, TroopsCanBeUsed = x.TroopsCanBeUsed}).ToArray();
+        copy.Factories = obj.Factories.Select(x => new Factory(x.Id) { Income = x.Income, Side = x.Side, TroopsCount = x.TroopsCount, TroopsCanBeUsed = x.TroopsCanBeUsed, InactivityDaysLeft = x.InactivityDaysLeft}).ToArray();
         copy.Troops = obj.Troops.Select(x => Troop.GetCopy(x)).ToList();
+        copy.CurrentGameTick = obj.CurrentGameTick;
         return copy;
     }
     public void DoNextMove() {
-        foreach (var factory in Factories.Where(x => x.Side != Side.Neutral)) { factory.TroopsCount += factory.Income; }
+        foreach (var factory in Factories.Where(x => x.Side != Side.Neutral)) {
+            if (factory.InactivityDaysLeft <= 0) factory.TroopsCount += factory.Income;
+            else factory.InactivityDaysLeft--;
+        }
         foreach (var troop in Troops) {troop.Remaining--;}
         foreach (var troopGroup in Troops.Where(x => x.Remaining == 0).GroupBy(x => x.Dst)) {
             var factory = Factories[troopGroup.First().Dst];
@@ -113,6 +120,7 @@ public class Graph {
             }
         }
         Troops = Troops.Where(x => x.Remaining > 0).ToList();
+        CurrentGameTick++;
         //        foreach (var factory in Factories) {
         //            if (factory.Side == Side.Neutral) {
         //                if (factory.TroopsCount != 0)
@@ -126,7 +134,7 @@ public class Graph {
         Troops = new List<Troop>();
         Factories = new Factory[GraphLinks.Size];
     }
-    public void ClearTroops() {
+    public void ClearMovedEntities() {
         Troops.Clear();
     }
     public void AddTroop(Side side, int size, int src, int dst, int remaining) {
@@ -149,11 +157,12 @@ public class Graph {
         Factories[idx] = fact;
         return fact;
     }
-    public void RefreshFactoryInfo(int id, int side, int income, int troopsCount) {
+    public void RefreshFactoryInfo(int id, int side, int income, int troopsCount, int bombDaysLeft) {
         var f = Factories[id];
         f.Income = income;
-        f.Side = (Side)side;
+        f.Side = (Side) side;
         f.TroopsCount = troopsCount;
+        f.InactivityDaysLeft = bombDaysLeft;
     }
     public void AddLink(int f1, int f2, int cost) {
         var Fact1 = GetFactory(f1);
@@ -229,6 +238,21 @@ public class AtackFactory : IJob {
             }
         }
         return multiMove;
+    }
+}
+public class WaitToUpgradeFactoryJob : IJob {
+    private int FactoryId;
+    private IMove move;
+    public WaitToUpgradeFactoryJob(int factoryId) {
+        FactoryId = factoryId;
+        move = new Message($"WTU F:{factoryId}");
+    }
+    public void EvaluateInnerState(Graph graphToCopy) {}
+    public int GetPriorityValue() {
+        return 0;
+    }
+    public IMove GetMove() {
+        return move;
     }
 }
 public class UpgradeFactoryJob : IJob {
@@ -329,8 +353,9 @@ public class MoveTroops : IMove {
         return Troops.Any() ? Troops.Max(x => x.Remaining) : 0;
     }
     public void ChangeGraph(Graph graph) {
-        graph.Troops.AddRange(Troops);
-        foreach (var troop in Troops) {
+        var troopsToGraph = Troops.Select(x => Troop.GetCopy(x)).ToList();
+        graph.Troops.AddRange(troopsToGraph);
+        foreach (var troop in troopsToGraph) {
             var factory = graph.Factories[troop.Src];
             factory.TroopsCanBeUsed -= troop.Size;
             factory.TroopsCount -= troop.Size;
@@ -425,7 +450,7 @@ class Player
         while (true)
         {
             int entityCount = int.Parse(Console.ReadLine()); // the number of entities (e.g. factories and troops)
-            graph.ClearTroops();
+            graph.ClearMovedEntities();
             for (int i = 0; i < entityCount; i++)
             {
                 inputs = Console.ReadLine().Split(' ');
@@ -437,7 +462,7 @@ class Player
                 int arg4 = int.Parse(inputs[5]);
                 int arg5 = int.Parse(inputs[6]);
                 if (entityType == "FACTORY") {
-                    graph.RefreshFactoryInfo(entityId, arg1, arg3, arg2);
+                    graph.RefreshFactoryInfo(entityId, arg1, arg3, arg2, arg4);
                 } else if (entityType == "TROOP") {
                     graph.AddTroop((Side) arg1, arg4, arg2, arg3, arg5);
                 }
@@ -445,8 +470,7 @@ class Player
             // Write an action using Console.WriteLine()
             // To debug: Console.Error.WriteLine("Debug messages...");
             Console.WriteLine(graph.GetNextBestMove());
-            // Any valid action, such as "WAIT" or "MOVE source destination cyborgs"
-//            Console.WriteLine("WAIT");
+            graph.CurrentGameTick++;
         }
     }
 }
@@ -537,17 +561,23 @@ public static class DecisionHelper {
             }
             jobs.AddRange(
                 graph.Factories
-                    .Where(x => x.TroopsCount >= 10 && x.Side == Side.MyOwn && x.Income < 3 && x.TroopsCanBeUsed >= 9) //TODO: condition can be changed, income check when bomb
-                    .Select(factoryToUpgrade => new UpgradeFactoryJob(factoryToUpgrade.Id))
+                    .Where(x => x.Side == Side.MyOwn && x.Income < 3) //TODO: condition can be changed, income check when bomb
+                    .Select(x => {
+                        if (x.TroopsCount >= 10 && x.TroopsCanBeUsed >= 9)
+                            return (IJob)new UpgradeFactoryJob(x.Id);
+                        else
+                            return (IJob)new WaitToUpgradeFactoryJob(x.Id);
+                    })
                 );
             //Evaluate jobs
+            var jobGraph = Graph.GetCopy(graph);
             while (true) {
-                jobs.ForEach(x => { x.EvaluateInnerState(graph); });
+                jobs.ForEach(x => { x.EvaluateInnerState(jobGraph); });
                 var first = jobs.OrderByDescending(x => x.GetPriorityValue()).FirstOrDefault();
                 if (first == null || first.GetPriorityValue() == int.MinValue) break;
                 var jobMove = first.GetMove();
                 Logger.ErrorLog("Best job Cost: " + first.GetPriorityValue() + " ACT: " + jobMove.GetConsoleCommand(), LogReportLevel.BestJobCost);
-                jobMove.ChangeGraph(graph);
+                jobMove.ChangeGraph(jobGraph);
                 multiMove.AddMove(jobMove);
                 jobs.Remove(first);
                 yield return multiMove;
@@ -603,7 +633,7 @@ public static class DecisionHelper {
         var stepsToPredict = graph.GetTroopSteps();
         foreach (var move in moves) {
             //TODO: учитывать реальный инком фабрики а не 0 после бомбы.
-            var estimate = move.GetEstimate(Graph.GetCopy(graph), Math.Max(stepsToPredict, move.StepsExecution()));
+            var estimate = move.GetEstimate(Graph.GetCopy(graph), Math.Max(GraphLinks.MaxDistance, Math.Max(stepsToPredict, move.StepsExecution())));
             Logger.ErrorLog("Move Cost: "+ estimate+" ACT:" + move.GetConsoleCommand(),LogReportLevel.EachMoveCost);
             if (estimate > bestEstimate) {
                 bestEstimate = estimate;
@@ -626,6 +656,7 @@ public static class DecisionHelper {
         return graph.DoSteps(steps).EvalCostFunction();
     }
 }
+using System.Linq;
 public static class GraphLinks {
     public static int MaxDistance { get; set; }
     public static int Size { get; set; }
@@ -666,7 +697,7 @@ public static class Logger {
     }
     public static void ErrorLogInline(LogReportLevel level, params object[] text) {
         if ((level & LogLevel) == 0) return;
-        Console.Error.Write(string.Join("|",text.ToString()));
+        Console.Error.Write(string.Join("|",text.Select(x=>x.ToString())));
     }
     private static LogReportLevel LogLevel =
         LogReportLevel.InnerJobCost |

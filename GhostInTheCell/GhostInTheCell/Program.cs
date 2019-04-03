@@ -71,7 +71,7 @@ class Player
         while (true)
         {
             int entityCount = int.Parse(Console.ReadLine()); // the number of entities (e.g. factories and troops)
-            graph.ClearTroops();
+            graph.ClearMovedEntities();
             for (int i = 0; i < entityCount; i++)
             {
                 inputs = Console.ReadLine().Split(' ');
@@ -84,7 +84,7 @@ class Player
                 int arg5 = int.Parse(inputs[6]);
 
                 if (entityType == "FACTORY") {
-                    graph.RefreshFactoryInfo(entityId, arg1, arg3, arg2);
+                    graph.RefreshFactoryInfo(entityId, arg1, arg3, arg2, arg4);
                 } else if (entityType == "TROOP") {
                     graph.AddTroop((Side) arg1, arg4, arg2, arg3, arg5);
                 }
@@ -92,10 +92,9 @@ class Player
 
             // Write an action using Console.WriteLine()
             // To debug: Console.Error.WriteLine("Debug messages...");
-
             Console.WriteLine(graph.GetNextBestMove());
-            // Any valid action, such as "WAIT" or "MOVE source destination cyborgs"
-//            Console.WriteLine("WAIT");
+
+            graph.CurrentGameTick++;
         }
     }
 }
@@ -199,8 +198,13 @@ public static class DecisionHelper {
 
             jobs.AddRange(
                 graph.Factories
-                    .Where(x => x.TroopsCount >= 10 && x.Side == Side.MyOwn && x.Income < 3 && x.TroopsCanBeUsed >= 9) //TODO: condition can be changed, income check when bomb
-                    .Select(factoryToUpgrade => new UpgradeFactoryJob(factoryToUpgrade.Id))
+                    .Where(x => x.Side == Side.MyOwn && x.Income < 3) //TODO: condition can be changed, income check when bomb
+                    .Select(x => {
+                        if (x.TroopsCount >= 10 && x.TroopsCanBeUsed >= 9)
+                            return (IJob)new UpgradeFactoryJob(x.Id);
+                        else
+                            return (IJob)new WaitToUpgradeFactoryJob(x.Id);
+                    })
                 );
 
             //Evaluate jobs

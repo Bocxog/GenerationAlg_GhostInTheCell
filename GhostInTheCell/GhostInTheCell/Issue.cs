@@ -79,6 +79,27 @@ public class AtackFactory : IJob {
         return multiMove;
     }
 }
+
+public class WaitToUpgradeFactoryJob : IJob {
+    private int FactoryId;
+    private IMove move;
+
+    public WaitToUpgradeFactoryJob(int factoryId) {
+        FactoryId = factoryId;
+        move = new Message($"WTU F:{factoryId}");
+    }
+
+    public void EvaluateInnerState(Graph graphToCopy) {}
+
+    public int GetPriorityValue() {
+        return 0;
+    }
+
+    public IMove GetMove() {
+        return move;
+    }
+}
+
 public class UpgradeFactoryJob : IJob {
     private int FactoryId;
     private MultiMove move;
