@@ -53,10 +53,10 @@ public static class Logger {
     }
 
     private static LogReportLevel LogLevel =
-        LogReportLevel.InnerJobCost |
-        LogReportLevel.BestJobCost |
-        LogReportLevel.EachMoveCost |
-        LogReportLevel.InnerInlineMoveCost |
-        LogReportLevel.BestMoveCost |
+        //LogReportLevel.InnerJobCost |
+        //LogReportLevel.BestJobCost |
+        //LogReportLevel.EachMoveCost |
+        //LogReportLevel.InnerInlineMoveCost |
+        //LogReportLevel.BestMoveCost |
         0;
 }

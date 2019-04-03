@@ -66,7 +66,7 @@ public class Factory {
     public int Income { get; set; }
     public Side Side { get; set; }
     public int TroopsCount { get; set; }
-    public int InactivityDaysLeft { get; set; }
+    public int InactivityDaysLeft { get; set; } /*Due to bomb explosion*/
     public int TroopsCanBeUsed { get; set; }
     public IEnumerable<FactoryLink> GetLinks() {
         for (int i = 0; i < GraphLinks.Size; i++) {
@@ -559,16 +559,16 @@ public static class DecisionHelper {
                 //multiMove.AddMove(new Message($"FS #{factories.Count}: "  + string.Join(", ", factories.Select(x => $"({x.FactoryId})" + string.Join(".", x.Enemies.Select(t=> t ?? -1))))));
                 factories.ForEach(x => { jobs.Add(new AtackFactory(x, stepsToPredict));});
             }
-            jobs.AddRange(
-                graph.Factories
-                    .Where(x => x.Side == Side.MyOwn && x.Income < 3) //TODO: condition can be changed, income check when bomb
-                    .Select(x => {
-                        if (x.TroopsCount >= 10 && x.TroopsCanBeUsed >= 9)
-                            return (IJob)new UpgradeFactoryJob(x.Id);
-                        else
-                            return (IJob)new WaitToUpgradeFactoryJob(x.Id);
-                    })
-                );
+            //jobs.AddRange(
+            //    graph.Factories
+            //        .Where(x => x.Side == Side.MyOwn && x.Income < 3) //TODO: condition can be changed, income check when bomb
+            //        .Select(x => {
+            //            if (x.TroopsCount >= 10 && x.TroopsCanBeUsed >= 9)
+            //                return (IJob)new UpgradeFactoryJob(x.Id);
+            //            else
+            //                return (IJob)new WaitToUpgradeFactoryJob(x.Id);
+            //        })
+            //    );
             //Evaluate jobs
             var jobGraph = Graph.GetCopy(graph);
             while (true) {
@@ -700,10 +700,10 @@ public static class Logger {
         Console.Error.Write(string.Join("|",text.Select(x=>x.ToString())));
     }
     private static LogReportLevel LogLevel =
-        LogReportLevel.InnerJobCost |
-        LogReportLevel.BestJobCost |
-        LogReportLevel.EachMoveCost |
-        LogReportLevel.InnerInlineMoveCost |
-        LogReportLevel.BestMoveCost |
+        //LogReportLevel.InnerJobCost |
+        //LogReportLevel.BestJobCost |
+        //LogReportLevel.EachMoveCost |
+        //LogReportLevel.InnerInlineMoveCost |
+        //LogReportLevel.BestMoveCost |
         0;
 }
