@@ -3,3 +3,5 @@
 /GhostInTheCell/GhostInTheCell/bin
 /GhostInTheCell/GhostInTheCell/obj
 *.suo
+/GhostInTheCell/AlgorithmPowerChecker/obj
+/GhostInTheCell/AlgorithmPowerChecker/bin
