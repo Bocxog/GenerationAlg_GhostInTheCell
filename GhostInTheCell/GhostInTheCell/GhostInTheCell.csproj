@@ -59,6 +59,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="a UsingList.cs" />
+    <Compile Include="GlobalConfig.cs" />
     <Compile Include="CostFunction.cs" />
     <Compile Include="Factory.cs" />
     <Compile Include="Graph.cs" />

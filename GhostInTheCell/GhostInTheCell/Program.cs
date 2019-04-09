@@ -8,6 +8,8 @@
 class Player
 {
     static void Main(string[] args) {
+        GlobalConfig.FillGlobalConstants(args);
+
         string[] inputs;
         int factoryCount = int.Parse(Console.ReadLine()); // the number of factories
         int linkCount = int.Parse(Console.ReadLine()); // the number of links between factories

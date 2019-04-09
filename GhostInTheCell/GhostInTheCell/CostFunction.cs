@@ -24,7 +24,7 @@ public static class CostFunction {
 //        else 
         if (!factory.GetLinks().Any(x => graph.Factories[x.DestinationId].Side == Side.Neutral && graph.Factories[x.DestinationId].Income > 0)) {//TODO: change if condition
             var enemyDistance = factory.GetLinks().Where(x => graph.Factories[x.DestinationId].Side == Side.Enemy).DefaultIfEmpty().Min(x => x.Distance); // TODO: add 2 step compare
-            var penalty = factory.TroopsCount*(enemyDistance > 15 ? 0.3f : enemyDistance > 10 ? 0.085f : 0);
+            var penalty = factory.TroopsCount * (enemyDistance > 15 ? GlobalConfig.LinkDistance_PenaltyCoef_15 : enemyDistance > 10 ? GlobalConfig.LinkDistance_PenaltyCoef_10 : GlobalConfig.LinkDistance_PenaltyCoef_other);
             Logger.ErrorLogInline(LogReportLevel.InnerInlineMoveCost, $"P:{penalty}");
             result -= penalty;
         }
