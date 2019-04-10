@@ -2,11 +2,11 @@
 <SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="AlgorithmPowerChecker.Properties" GeneratedClassName="Settings">
   <Profiles />
   <Settings>
-    <Setting Name="RunnerPath" Type="System.String" Scope="User">
-      <Value Profile="(Default)">-cp F:\Experiment\CodinGames\ghost-in-the-cell\ RefereeRunner</Value>
-    </Setting>
     <Setting Name="AlgorithmExePath" Type="System.String" Scope="User">
       <Value Profile="(Default)">F:\Experiment\CodinGames\GITC_solutions\GhostInTheCell_3params.exe</Value>
+    </Setting>
+    <Setting Name="RunnerPath" Type="System.String" Scope="User">
+      <Value Profile="(Default)">-cp F:\Experiment\CodinGames\ghost-in-the-cell-modified_params\ RefereeRunner</Value>
     </Setting>
   </Settings>
 </SettingsFile>

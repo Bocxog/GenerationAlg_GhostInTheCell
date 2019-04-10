@@ -22,48 +22,62 @@ namespace GenerationAlgorithm.GITC {
         static ResultDictionary ResultMap = new ResultDictionary(FightExecuter);
 
         static void Main(string[] args) {
+            //TODO: multiple log destinations for each type & lvl
+            // why no any mutation
+            // what's problem in selection
+            // remove cache from fitness
+
             Log.Logger = new LoggerConfiguration()
                 .WriteTo.File(Properties.Settings.Default.LogsPath, rollOnFileSizeLimit: true, fileSizeLimitBytes: 5*1024*1024)
                 .CreateLogger();
+            try {
+                var population = GetPopulation();
+                var fitness = GetFitness();
+                var selection = GetSelection();
+                var crossover = GetCrossover();
+                var mutation = GetMutation();
 
-            var population = GetPopulation();
-            var fitness = GetFitness();
-            var selection = GetSelection();
-            var crossover = GetCrossover();
-            var mutation = GetMutation();
-                        
 
-            var ga = GA = new GeneticAlgorithm(population,fitness,selection,crossover,mutation);
-            ga.Termination = GetTermination();
+                var ga = GA = new GeneticAlgorithm(population, fitness, selection, crossover, mutation);
+                ga.Termination = GetTermination();
 
-            Log.Information("Generation: The strongest algorithm GITC.");
+                Log.Information("Generation: The strongest algorithm GITC.");
 
-            var latestFitness = 0.0;
+                var latestFitness = 0.0;
 
-            ga.GenerationRan += (sender, e) => {
-                ResultMap.Reset();
-                var bestChromosome = ga.BestChromosome as FloatingPointChromosome;
-                var bestFitness = bestChromosome.Fitness.Value;
+                ga.GenerationRan += (sender, e) => {
+                    ResultMap.Reset();
+                    var bestChromosome = ga.Population.CurrentGeneration.BestChromosome as FloatingPointChromosome;
+                    //var bestChromosome = ga.BestChromosome as FloatingPointChromosome;
+                    var bestFitness = bestChromosome.Fitness.Value;
 
-                bestChromosomes.Add(bestChromosome);
+                    bestChromosomes.Add(bestChromosome);
 
-                //if (bestFitness != latestFitness) {
-                latestFitness = bestFitness;
-                var phenotype = bestChromosome.ToFloatingPoints();
+                    //if (bestFitness != latestFitness) {
+                    latestFitness = bestFitness;
+                    var phenotype = bestChromosome.ToFloatingPoints();
 
-                Log.Information(
-                    "Generation {0,2}: ({1},{2}) = {3}. Chromosome: {BestChromosome}",
-                    ga.GenerationsNumber,
-                    phenotype[0],
-                    phenotype[1],
-                    bestFitness,
-                    ga.BestChromosome
-                );
-                //}
-            };
+                    Log.Information(
+                        "Generation {0,2}: ({1}) = {2}. Chromosome: {BestChromosome}",
+                        ga.GenerationsNumber,
+                        string.Join(":", phenotype),
+                        bestFitness,
+                        ga.BestChromosome
+                    );
 
-            ga.Start();
+                    foreach (var chromosome in ga.Population.CurrentGeneration.Chromosomes)
+                        chromosome.Fitness = null;
+                    //}
+                };
 
+                ga.Start();
+            }
+            catch(Exception e) {
+                Log.Error(e, "Exception is occured while");
+            }
+            
+            Console.WriteLine("Generation is ended.");
+            Log.Information("Generation is ended.");
             Console.ReadKey();
         }
 
@@ -90,7 +104,7 @@ namespace GenerationAlgorithm.GITC {
 
             var chromosome = new FloatingPointChromosome(arrayOfMin, arrayOfMax, arrayOfBits, arrayOfFractionDigits);
 
-            return new Population(minSize: 25, maxSize: 150, adamChromosome: chromosome);
+            return new Population(minSize: 5, maxSize: 150, adamChromosome: chromosome);
         }
 
         private static IFitness GetFitness() {
@@ -121,18 +135,19 @@ namespace GenerationAlgorithm.GITC {
         #region Genetic Algorithm Settings
 
         private static ISelection GetSelection() {
-            return new TournamentSelection(3, false); // Each round Select a chromosome with best Fitness value inside random group of 3 items. This chromosome will be removed from next round
-            //return new EliteSelection();
+            //return new TournamentSelection(2, true); // Each round Select a chromosome with best Fitness value inside random group of 3 items. This chromosome will be removed from next round
+            //return new TournamentSelection(2, false); // Each round Select a chromosome with best Fitness value inside random group of 3 items. This chromosome will be removed from next round
+            return new EliteSelection();
         }
 
         private static ICrossover GetCrossover() {
             // here is the place for furher investigations
-            return new UniformCrossover(); // 50% of each parent
-            //return new TwoPointCrossover();
+            //return new UniformCrossover(); // 50% of each parent
+            return new TwoPointCrossover();
         }
 
         private static IMutation GetMutation() {
-            return new UniformMutation();
+            //return new UniformMutation();
             return new FlipBitMutation();
             //FlipBitMutation - Takes the chosen genome and inverts the bits (i.e. if the genome bit is 1, it is changed to 0 and vice versa).
             //DisplacementMutation - In the displacement mutation operator, a substring is randomly selected from chromosome, is removed, then replaced at a randomly selected position. 
@@ -145,7 +160,7 @@ namespace GenerationAlgorithm.GITC {
         private static ITermination GetTermination() {
             return new OrTermination(
                 new TimeEvolvingTermination(new TimeSpan(5,0,0)),
-                new GenerationNumberTermination(200)
+                new GenerationNumberTermination(3)
                 );
             return new FitnessStagnationTermination(100);
 

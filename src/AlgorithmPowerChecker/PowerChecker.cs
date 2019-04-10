@@ -36,8 +36,10 @@ namespace AlgorithmPowerChecker {
                     Properties.Settings.Default.RunnerPath,
                     Properties.Settings.Default.AlgorithmExePath,
                     firstParameters,
+                    //'"'+firstParameters+ '"',
                     Properties.Settings.Default.AlgorithmExePath,
                     secondParameters
+                    //'"'+secondParameters+ '"'
                     );
                 process.StartInfo.UseShellExecute = false;
                 process.StartInfo.RedirectStandardOutput = true;
