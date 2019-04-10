@@ -136,13 +136,14 @@ namespace GenerationAlgorithm.GITC {
 
         private static ISelection GetSelection() {
             //return new TournamentSelection(2, true); // Each round Select a chromosome with best Fitness value inside random group of 3 items. This chromosome will be removed from next round
-            //return new TournamentSelection(2, false); // Each round Select a chromosome with best Fitness value inside random group of 3 items. This chromosome will be removed from next round
+            return new TournamentSelection(2, false); // Each round Select a chromosome with best Fitness value inside random group of 3 items. This chromosome will be removed from next round
             return new EliteSelection();
         }
 
         private static ICrossover GetCrossover() {
             // here is the place for furher investigations
             //return new UniformCrossover(); // 50% of each parent
+            return new OrderedCrossover(); //random select 2 points of intersect
             return new TwoPointCrossover();
         }
 
