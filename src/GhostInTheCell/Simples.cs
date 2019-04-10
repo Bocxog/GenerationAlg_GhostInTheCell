@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System;using System.Linq;
 
 public static class GraphLinks {
     public static int MaxDistance { get; set; }

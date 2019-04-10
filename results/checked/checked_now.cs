@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Globalization;public static class CostFunction {
@@ -80,8 +80,8 @@ public class Factory {
     }
 }
 public static class GlobalConfig {
-    public static float LinkDistance_PenaltyCoef_15    = 0.3f;
-    public static float LinkDistance_PenaltyCoef_10    = 0.085f;
+    public static float LinkDistance_PenaltyCoef_15    = 73f;
+    public static float LinkDistance_PenaltyCoef_10    = 19f;
     public static float LinkDistance_PenaltyCoef_other = 0.0f;
     internal static void FillGlobalConstants(string[] args) {
         if (args.Length == 0) return;
