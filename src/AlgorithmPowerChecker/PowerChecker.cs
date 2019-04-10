@@ -19,7 +19,7 @@ namespace AlgorithmPowerChecker {
                     var result = GetFightResult(firstParameters, secondParameters);
                     lock (myCollection) {
                         sum += (int)result;
-                        Console.WriteLine(sum);
+                        //Console.WriteLine(sum);
                     }
                 });
             }

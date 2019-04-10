@@ -29,6 +29,7 @@ namespace GenerationAlgorithm.GITC {
 
             Log.Logger = new LoggerConfiguration()
                 .WriteTo.File(Properties.Settings.Default.LogsPath, rollOnFileSizeLimit: true, fileSizeLimitBytes: 5*1024*1024)
+                .WriteTo.Console()
                 .CreateLogger();
             try {
                 var population = GetPopulation();
@@ -58,9 +59,18 @@ namespace GenerationAlgorithm.GITC {
                     var phenotype = bestChromosome.ToFloatingPoints();
 
                     Log.Information(
-                        "Generation {0,2}: ({1}) = {2}. Chromosome: {BestChromosome}",
+                        "Generation {0,2}: List: ({1})",
                         ga.GenerationsNumber,
-                        string.Join(":", phenotype),
+                        string.Join(", ",
+                            ga.Population.CurrentGeneration.Chromosomes
+                            .OrderByDescending(x => x.Fitness)
+                            .Select(x => string.Join("|", (x as FloatingPointChromosome).ToFloatingPoints()) + "#" + x.Fitness)
+                        )
+                    );
+                    Log.Information(
+                        "Generation {0,2}: Best: ({1}) = {2}. Chromosome: {BestChromosome}",
+                        ga.GenerationsNumber,
+                        string.Join("|", phenotype),
                         bestFitness,
                         ga.BestChromosome
                     );
@@ -76,7 +86,7 @@ namespace GenerationAlgorithm.GITC {
                 Log.Error(e, "Exception is occured while");
             }
             
-            Console.WriteLine("Generation is ended.");
+            //Console.WriteLine("Generation is ended.");
             Log.Information("Generation is ended.");
             Console.ReadKey();
         }
@@ -104,7 +114,7 @@ namespace GenerationAlgorithm.GITC {
 
             var chromosome = new FloatingPointChromosome(arrayOfMin, arrayOfMax, arrayOfBits, arrayOfFractionDigits);
 
-            return new Population(minSize: 5, maxSize: 150, adamChromosome: chromosome);
+            return new Population(minSize: 9, maxSize: 150, adamChromosome: chromosome);
         }
 
         private static IFitness GetFitness() {
@@ -136,15 +146,18 @@ namespace GenerationAlgorithm.GITC {
 
         private static ISelection GetSelection() {
             //return new TournamentSelection(2, true); // Each round Select a chromosome with best Fitness value inside random group of 3 items. This chromosome will be removed from next round
-            return new TournamentSelection(2, false); // Each round Select a chromosome with best Fitness value inside random group of 3 items. This chromosome will be removed from next round
+            //return new TournamentSelection(2, false); // Each round Select a chromosome with best Fitness value inside random group of 3 items. This chromosome will be removed from next round
             return new EliteSelection();
         }
 
         private static ICrossover GetCrossover() {
             // here is the place for furher investigations
             //return new UniformCrossover(); // 50% of each parent
-            return new OrderedCrossover(); //random select 2 points of intersect
-            return new TwoPointCrossover();
+            return new ThreeParentCrossover();// Is good for us because generate 1 child for 3 parents, then take parents by Selection
+            return new VotingRecombinationCrossover();
+            //return new CutAndSpliceCrossover();//The length of gene was changed
+            //return new OrderedCrossover();// NEED TO BE ORDERED
+            return new TwoPointCrossover(8, 23);
         }
 
         private static IMutation GetMutation() {
@@ -161,7 +174,7 @@ namespace GenerationAlgorithm.GITC {
         private static ITermination GetTermination() {
             return new OrTermination(
                 new TimeEvolvingTermination(new TimeSpan(5,0,0)),
-                new GenerationNumberTermination(3)
+                new GenerationNumberTermination(100)
                 );
             return new FitnessStagnationTermination(100);
 
