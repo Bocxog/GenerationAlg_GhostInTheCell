@@ -3,7 +3,10 @@
   <Profiles />
   <Settings>
     <Setting Name="RunnerPath" Type="System.String" Scope="User">
-      <Value Profile="(Default)">C:\runner</Value>
+      <Value Profile="(Default)">-cp F:\Experiment\CodinGames\ghost-in-the-cell\ RefereeRunner</Value>
+    </Setting>
+    <Setting Name="AlgorithmExePath" Type="System.String" Scope="User">
+      <Value Profile="(Default)">F:\Experiment\CodinGames\GITC_solutions\GhostInTheCell_3params.exe</Value>
     </Setting>
   </Settings>
 </SettingsFile>

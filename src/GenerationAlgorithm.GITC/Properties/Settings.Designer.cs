@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace AlgorithmPowerChecker.Properties {
+namespace GenerationAlgorithm.GITC.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
@@ -25,25 +25,13 @@ namespace AlgorithmPowerChecker.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("-cp F:\\Experiment\\CodinGames\\ghost-in-the-cell\\ RefereeRunner")]
-        public string RunnerPath {
+        [global::System.Configuration.DefaultSettingValueAttribute("C:\\temp\\logs\\log-.txt")]
+        public string LogsPath {
             get {
-                return ((string)(this["RunnerPath"]));
+                return ((string)(this["LogsPath"]));
             }
             set {
-                this["RunnerPath"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("F:\\Experiment\\CodinGames\\GITC_solutions\\GhostInTheCell_3params.exe")]
-        public string AlgorithmExePath {
-            get {
-                return ((string)(this["AlgorithmExePath"]));
-            }
-            set {
-                this["AlgorithmExePath"] = value;
+                this["LogsPath"] = value;
             }
         }
     }

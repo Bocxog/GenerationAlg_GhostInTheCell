@@ -9,8 +9,8 @@ namespace AlgorithmPowerChecker {
         FirstWin   = 1,
         SecondLose = 1,
 
-        SecondWin = 2,
-        FirstLost = 2,
+        SecondWin = -1,
+        FirstLost = -1,
 
         Draw = 0
     }

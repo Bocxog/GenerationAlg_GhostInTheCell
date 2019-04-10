@@ -5,3 +5,11 @@
 *.suo
 /GhostInTheCell/AlgorithmPowerChecker/obj
 /GhostInTheCell/AlgorithmPowerChecker/bin
+/src/.vs
+/src/AlgorithmPowerChecker/bin
+/src/AlgorithmPowerChecker/obj
+/src/GenerationAlgorithm.GITC/bin
+/src/GenerationAlgorithm.GITC/obj
+/src/packages
+/src/GhostInTheCell/bin
+/src/GhostInTheCell/obj

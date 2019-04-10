@@ -3,6 +3,8 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27130.2010
 MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GenerationAlgorithm.GITC", "GenerationAlgorithm.GITC\GenerationAlgorithm.GITC.csproj", "{A4D70860-34CD-4885-9930-929F3933A0FC}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AlgorithmPowerChecker", "AlgorithmPowerChecker\AlgorithmPowerChecker.csproj", "{49B96EE1-2D33-471F-AEBF-F79F197FBEBF}"
 EndProject
 Global
@@ -11,6 +13,10 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A4D70860-34CD-4885-9930-929F3933A0FC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A4D70860-34CD-4885-9930-929F3933A0FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A4D70860-34CD-4885-9930-929F3933A0FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A4D70860-34CD-4885-9930-929F3933A0FC}.Release|Any CPU.Build.0 = Release|Any CPU
 		{49B96EE1-2D33-471F-AEBF-F79F197FBEBF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{49B96EE1-2D33-471F-AEBF-F79F197FBEBF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{49B96EE1-2D33-471F-AEBF-F79F197FBEBF}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -20,6 +26,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {2E0936A3-D977-4734-93CE-0453672F43E9}
+		SolutionGuid = {08291C37-455A-43F9-ABC8-3929D24BCC8B}
 	EndGlobalSection
 EndGlobal
