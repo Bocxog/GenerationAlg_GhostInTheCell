@@ -116,18 +116,6 @@ namespace GenerationAlgorithm.GITC {
                     }
                 }
                 return ResultMap.GetResult(c);
-                //var fc = c as FloatingPointChromosome;
-                //return bestChromosomes.AsParallel().Sum(x => {
-                //    var fightResult = GetResult(fc, x);
-
-                //    switch (fightResult) {
-                //        case FightResult.Win: return 3;
-                //        case FightResult.Draw: return 1;
-                //        case FightResult.Lose:
-                //        default:
-                //            return 0;
-                //            }
-                //});
             });
         }
 
