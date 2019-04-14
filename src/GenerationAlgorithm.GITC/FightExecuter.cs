@@ -11,25 +11,12 @@ using System.Globalization;
 namespace GenerationAlgorithm.GITC {
     public class FightExecuter {
         class AlgorithmConfig {
-            protected readonly double[] values;
             protected readonly string formattedValue;
             public AlgorithmConfig(IChromosome chromosome) {
-                if (!(chromosome is FloatingPointChromosome floatPoints)) {
-                    throw new NotImplementedException("Chromosome type is not supported: " + chromosome.GetType());
-                }
-
-                var floatValues = floatPoints.ToFloatingPoints();
-                values = new double[floatValues.Length];
-                for (int i = 0; i < floatValues.Length; i++)
-                    values[i] = floatValues[i];
-
-                formattedValue = string.Join("|", values.Select(x => x.ToString(CultureInfo.InvariantCulture)));
+                formattedValue = chromosome.GetTransferedString();
             }
 
-            public override string ToString() {
-                return formattedValue;
-                //return base.ToString();
-            }
+            public override string ToString() => formattedValue;
         }
 
 

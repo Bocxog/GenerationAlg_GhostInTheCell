@@ -2,20 +2,20 @@
 using System.Linq;
 using System.Collections.Generic;
 using System.Globalization;public static class CostFunction {
-    public static float EvalCostFunction(this Graph graph) {
+    public static decimal EvalCostFunction(this Graph graph) {
         var factoriesMy = graph.Factories.Where(x => x.Side == Side.MyOwn).ToList();
         var factoriesEnemy = graph.Factories.Where(x => x.Side == Side.Enemy).ToList();
         if (!factoriesEnemy.Any(x => x.Income > 0 || x.TroopsCount > 0))//TODO: всё войско может быть в пути. хотя считаем в конце всех ходов...
-            return float.MaxValue;
+            return decimal.MaxValue;
         return factoriesMy.Sum(x => x.EvalMyFactoryCostFunction(graph))
-               - factoriesEnemy.Sum(x => (x.Income + 0.01f + x.FactoryPotentialUpgradeCostFunction())*(1 + x.TroopsCount*0.03f)) // With Neutrals
+               - factoriesEnemy.Sum(x => (x.Income + GlobalConfig.Weight_Factory_Bonus + x.FactoryPotentialUpgradeCostFunction())*(1 + x.TroopsCount * GlobalConfig.Weight_Troop)) // With Neutrals
             ;
     }
-    public static float FactoryPotentialUpgradeCostFunction(this Factory factory) {
-        return (factory.Income < 3 && factory.TroopsCount >= 10 ? 0.7f : 0);
+    public static decimal FactoryPotentialUpgradeCostFunction(this Factory factory) {
+        return (factory.Income < 3 && factory.TroopsCount >= 10 ? GlobalConfig.Factory_UpgradeCost : 0);
     }
-    public static float EvalMyFactoryCostFunction(this Factory factory, Graph graph) {
-        float result = (factory.Income + factory.FactoryPotentialUpgradeCostFunction()) * (1 + factory.TroopsCount * 0.03f);
+    public static decimal EvalMyFactoryCostFunction(this Factory factory, Graph graph) {
+        decimal result = (factory.Income + factory.FactoryPotentialUpgradeCostFunction()) * (1 + factory.TroopsCount * GlobalConfig.Factory_TroopWeight);
         Logger.ErrorLogInline(LogReportLevel.InnerInlineMoveCost,$"F:{factory.Id}", result);
 //        if (factory.GetLinks().Where(x => x.PathType == GraphLinks.PathType.Direct).All(x => graph.Factories[x.DestinationId].Side == Side.MyOwn))
 //            result -= 0.5f*Math.Min(1, ((float) factory.TroopsCount)/30);
@@ -80,16 +80,24 @@ public class Factory {
     }
 }
 public static class GlobalConfig {
-    public static float LinkDistance_PenaltyCoef_15    = 0.3f;
-    public static float LinkDistance_PenaltyCoef_10    = 0.085f;
-    public static float LinkDistance_PenaltyCoef_other = 0.0f;
+    public static decimal LinkDistance_PenaltyCoef_15    = 0.3M;
+    public static decimal LinkDistance_PenaltyCoef_10    = 0.085M;
+    public static decimal LinkDistance_PenaltyCoef_other = 0.0M;
+    public static decimal Weight_Troop = 0.7M;
+    public static decimal Weight_Factory_Bonus = 0.1M;
+    public static decimal Factory_UpgradeCost = 0.7M;
+    public static decimal Factory_TroopWeight = 0.03M;
     internal static void FillGlobalConstants(string[] args) {
         if (args.Length == 0) return;
-        var parameters = args[0].Split('|').Select(x=> float.Parse(x, CultureInfo.InvariantCulture)).ToArray();
+        var parameters = args[0].Split('|').Select(x=> decimal.Parse(x, CultureInfo.InvariantCulture)).ToArray();
         if (parameters.Count() == 3) {
             LinkDistance_PenaltyCoef_15    = parameters[0];
             LinkDistance_PenaltyCoef_10    = parameters[1];
-            LinkDistance_PenaltyCoef_other = parameters[2];            
+            LinkDistance_PenaltyCoef_other = parameters[2];
+            Weight_Troop                   = parameters[3];
+            Weight_Factory_Bonus           = parameters[4];
+            Factory_UpgradeCost            = parameters[5];
+            Factory_TroopWeight            = parameters[6];
         }
     }
     //    public static float EvalCostFunction(this Graph graph) {
@@ -673,7 +681,7 @@ public static class DecisionHelper {
         public int?[] Enemies { get; set; }
     }
     public static string GetBestCommand(this IEnumerable<IMove> moves, Graph graph) {
-        float bestEstimate = float.MinValue;
+        decimal bestEstimate = decimal.MinValue;
         string bestMove = null;
         var stepsToPredict = graph.GetTroopSteps();
         foreach (var move in moves) {
@@ -694,7 +702,7 @@ public static class DecisionHelper {
             graph.DoNextMove();
         return graph;
     }
-    public static float GetEstimate(this IMove move, Graph graph, int steps) {
+    public static decimal GetEstimate(this IMove move, Graph graph, int steps) {
         move.ChangeGraph(graph);
         //TODO: implement best enemy move and check
 //        graph.DoSteps(steps);

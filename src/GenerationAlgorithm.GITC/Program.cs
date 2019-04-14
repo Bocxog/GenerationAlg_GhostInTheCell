@@ -11,6 +11,7 @@ using GeneticSharp.Domain.Mutations;
 using GeneticSharp.Domain.Populations;
 using GeneticSharp.Domain.Selections;
 using GeneticSharp.Domain.Terminations;
+using GeneticSharp.Extensions.Multiple;
 using Serilog;
 
 namespace GenerationAlgorithm.GITC {
@@ -31,7 +32,7 @@ namespace GenerationAlgorithm.GITC {
                 .WriteTo.File(Properties.Settings.Default.LogsPath, rollOnFileSizeLimit: true, fileSizeLimitBytes: 5*1024*1024)
                 .CreateLogger();
             try {
-                var population = GetPopulation();
+                var population = GetIntPopulation();
                 var fitness = GetFitness();
                 var selection = GetSelection();
                 var crossover = GetCrossover();
@@ -47,20 +48,18 @@ namespace GenerationAlgorithm.GITC {
 
                 ga.GenerationRan += (sender, e) => {
                     ResultMap.Reset();
-                    var bestChromosome = ga.Population.CurrentGeneration.BestChromosome as FloatingPointChromosome;
-                    //var bestChromosome = ga.BestChromosome as FloatingPointChromosome;
+                    var bestChromosome = ga.Population.CurrentGeneration.BestChromosome;
                     var bestFitness = bestChromosome.Fitness.Value;
 
                     bestChromosomes.Add(bestChromosome);
 
-                    //if (bestFitness != latestFitness) {
                     latestFitness = bestFitness;
-                    var phenotype = bestChromosome.ToFloatingPoints();
+                    var phenotype = bestChromosome.GetTransferedString();
 
                     Log.Information(
                         "Generation {0,2}: ({1}) = {2}. Chromosome: {BestChromosome}",
                         ga.GenerationsNumber,
-                        string.Join(":", phenotype),
+                        phenotype,
                         bestFitness,
                         ga.BestChromosome
                     );
@@ -80,30 +79,19 @@ namespace GenerationAlgorithm.GITC {
             Log.Information("Generation is ended.");
             Console.ReadKey();
         }
+        
+        private static IPopulation GetIntPopulation()
+        {
+            var minValue = -10;
+            var maxValue = 90;
 
-        private static IPopulation GetPopulation() {
-            var minValue = 0f;
-            var maxValue = 90f;
-            int totalBits = 10;
-            int fractionDigits = 0;
+            const int parametersSize = 7;
 
-            const int parametersSize = 3;
+            var list = new List<IChromosome> { };
+            for (int i = 0; i < parametersSize; i++)
+                list.Add(new DecimalChromosome(minValue, maxValue, 4));
 
-            double[] arrayOfMin = new double[parametersSize];
-            double[] arrayOfMax = new double[parametersSize];
-            int[] arrayOfBits = new int[parametersSize];
-            int[] arrayOfFractionDigits = new int[parametersSize];
-
-            for(int i = 0; i < parametersSize; i++) {
-                arrayOfMin[i]            = minValue;
-                arrayOfMax[i]            = maxValue;
-                arrayOfBits[i]           = totalBits;
-                arrayOfFractionDigits[i] = fractionDigits;
-            }
-
-
-            var chromosome = new FloatingPointChromosome(arrayOfMin, arrayOfMax, arrayOfBits, arrayOfFractionDigits);
-
+            var chromosome = new MultipleChromosome(list);
             return new Population(minSize: 5, maxSize: 150, adamChromosome: chromosome);
         }
 
@@ -143,6 +131,7 @@ namespace GenerationAlgorithm.GITC {
         private static ICrossover GetCrossover() {
             // here is the place for furher investigations
             //return new UniformCrossover(); // 50% of each parent
+            return new VotingRecombinationCrossover(3, 2); //random select 2 points of intersect
             return new OrderedCrossover(); //random select 2 points of intersect
             return new TwoPointCrossover();
         }
@@ -170,6 +159,36 @@ namespace GenerationAlgorithm.GITC {
             // Generation number termination. - The genetic algorithm will be terminate when reach the expected generation number.
             // Fitness Threshold Termination - The genetic algorithm will be terminate when the best chromosome reach the expected fitness.
             // Fitness Stagnation Termination - The genetic algorithm will be terminate when the best chromosome's fitness has no change in the last generations specified.
+        }
+        #endregion
+
+        #region Floating garbage
+
+        private static IPopulation GetPopulation()
+        {            
+            var minValue = 0f;
+            var maxValue = 90f;
+            int totalBits = 10;
+            int fractionDigits = 0;
+
+            const int parametersSize = 3;
+
+            double[] arrayOfMin = new double[parametersSize];
+            double[] arrayOfMax = new double[parametersSize];
+            int[] arrayOfBits = new int[parametersSize];
+            int[] arrayOfFractionDigits = new int[parametersSize];
+
+            for (int i = 0; i < parametersSize; i++)
+            {
+                arrayOfMin[i] = minValue;
+                arrayOfMax[i] = maxValue;
+                arrayOfBits[i] = totalBits;
+                arrayOfFractionDigits[i] = fractionDigits;
+            }
+
+            var chromosome = new FloatingPointChromosome(arrayOfMin, arrayOfMax, arrayOfBits, arrayOfFractionDigits);
+            throw new NotSupportedException();
+            return new Population(minSize: 5, maxSize: 150, adamChromosome: chromosome);
         }
         #endregion
     }
