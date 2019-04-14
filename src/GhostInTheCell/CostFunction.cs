@@ -1,23 +1,23 @@
 ﻿using System;using System.Linq;
 
 public static class CostFunction {
-    public static float EvalCostFunction(this Graph graph) {
+    public static decimal EvalCostFunction(this Graph graph) {
         var factoriesMy = graph.Factories.Where(x => x.Side == Side.MyOwn).ToList();
         var factoriesEnemy = graph.Factories.Where(x => x.Side == Side.Enemy).ToList();
 
         if (!factoriesEnemy.Any(x => x.Income > 0 || x.TroopsCount > 0))//TODO: всё войско может быть в пути. хотя считаем в конце всех ходов...
-            return float.MaxValue;
+            return decimal.MaxValue;
         return factoriesMy.Sum(x => x.EvalMyFactoryCostFunction(graph))
-               - factoriesEnemy.Sum(x => (x.Income + 0.01f + x.FactoryPotentialUpgradeCostFunction())*(1 + x.TroopsCount*0.03f)) // With Neutrals
+               - factoriesEnemy.Sum(x => (x.Income + GlobalConfig.Weight_Factory_Bonus + x.FactoryPotentialUpgradeCostFunction())*(1 + x.TroopsCount * GlobalConfig.Weight_Troop)) // With Neutrals
             ;
     }
 
-    public static float FactoryPotentialUpgradeCostFunction(this Factory factory) {
-        return (factory.Income < 3 && factory.TroopsCount >= 10 ? 0.7f : 0);
+    public static decimal FactoryPotentialUpgradeCostFunction(this Factory factory) {
+        return (factory.Income < 3 && factory.TroopsCount >= 10 ? GlobalConfig.Factory_UpgradeCost : 0);
     }
 
-    public static float EvalMyFactoryCostFunction(this Factory factory, Graph graph) {
-        float result = (factory.Income + factory.FactoryPotentialUpgradeCostFunction()) * (1 + factory.TroopsCount * 0.03f);
+    public static decimal EvalMyFactoryCostFunction(this Factory factory, Graph graph) {
+        decimal result = (factory.Income + factory.FactoryPotentialUpgradeCostFunction()) * (1 + factory.TroopsCount * GlobalConfig.Factory_TroopWeight);
         Logger.ErrorLogInline(LogReportLevel.InnerInlineMoveCost,$"F:{factory.Id}", result);
 //        if (factory.GetLinks().Where(x => x.PathType == GraphLinks.PathType.Direct).All(x => graph.Factories[x.DestinationId].Side == Side.MyOwn))
 //            result -= 0.5f*Math.Min(1, ((float) factory.TroopsCount)/30);

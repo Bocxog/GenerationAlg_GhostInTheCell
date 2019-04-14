@@ -274,7 +274,7 @@ public static class DecisionHelper {
     }
 
     public static string GetBestCommand(this IEnumerable<IMove> moves, Graph graph) {
-        float bestEstimate = float.MinValue;
+        decimal bestEstimate = decimal.MinValue;
         string bestMove = null;
         var stepsToPredict = graph.GetTroopSteps();
         foreach (var move in moves) {
@@ -297,7 +297,7 @@ public static class DecisionHelper {
         return graph;
     }
 
-    public static float GetEstimate(this IMove move, Graph graph, int steps) {
+    public static decimal GetEstimate(this IMove move, Graph graph, int steps) {
         move.ChangeGraph(graph);
 
         //TODO: implement best enemy move and check
