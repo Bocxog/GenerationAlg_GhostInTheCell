@@ -143,9 +143,9 @@ namespace GenerationAlgorithm.GITC {
         private static ICrossover GetCrossover() {
             // here is the place for furher investigations
             //return new UniformCrossover(); // 50% of each parent
-			return new VotingRecombinationCrossover(3, 2);
             return new ThreeParentCrossover();// Is good for us because generate 1 child for 3 parents, then take parents by Selection
-            
+			return new VotingRecombinationCrossover(3, 2);
+
             //return new CutAndSpliceCrossover();//The length of gene was changed
             //return new OrderedCrossover();// NEED TO BE ORDERED
             return new TwoPointCrossover(8, 23);
