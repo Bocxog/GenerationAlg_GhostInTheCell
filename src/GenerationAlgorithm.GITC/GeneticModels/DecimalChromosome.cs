@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using GeneticSharp.Domain.Chromosomes;
 
 namespace GenerationAlgorithm.GITC {
-    public class DecimalChromosome : IntegerChromosome
+    public class DecimalChromosome : FloatingPointChromosome
     {
         public short Decimals { get; set; }
         public readonly int Shift;
@@ -14,7 +14,7 @@ namespace GenerationAlgorithm.GITC {
         public readonly int m_maxValue;
         public readonly short m_decimals;
         public int DecimalTens { get; set; }
-        public DecimalChromosome(int min, int max, short decimals) : base(0, (max - min) * (int)Math.Pow(10, decimals))
+        public DecimalChromosome(int min, int max, short decimals) : base(0, (max - min) * (int)Math.Pow(10, decimals), 32, 0)
         {
             Decimals = decimals;
             DecimalTens = (int)Math.Pow(10, decimals);
@@ -29,7 +29,7 @@ namespace GenerationAlgorithm.GITC {
 
         public decimal ToDecimal()
         {
-            var intValue = this.ToInteger() + Shift;
+            var intValue = (int)this.ToFloatingPoint() + Shift;
             return intValue / (decimal)DecimalTens;
         }
     }
