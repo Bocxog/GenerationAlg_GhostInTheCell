@@ -5,5 +5,8 @@
     <Setting Name="LogsPath" Type="System.String" Scope="User">
       <Value Profile="(Default)">C:\temp\logs\log-.txt</Value>
     </Setting>
+    <Setting Name="LogsInfoPath" Type="System.String" Scope="User">
+      <Value Profile="(Default)">C:\temp\logs\log-info.txt</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

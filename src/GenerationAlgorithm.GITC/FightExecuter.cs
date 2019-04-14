@@ -20,7 +20,7 @@ namespace GenerationAlgorithm.GITC {
         }
 
 
-        internal int GetCompetitionResult(IChromosome chromosome1, IChromosome chromosome2, int count = 3) {
+        internal int GetCompetitionResult(IChromosome chromosome1, IChromosome chromosome2, int count = 1) {
             var config1 = new AlgorithmConfig(chromosome1);
             var config2 = new AlgorithmConfig(chromosome2);
 
