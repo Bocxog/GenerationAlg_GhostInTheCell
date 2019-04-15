@@ -1,0 +1,3 @@
+[submodule "dependencies/GeneticSharp"]
+	path = dependencies/GeneticSharp
+	url = https://github.com/Bocxog/GeneticSharp.git
