@@ -29,7 +29,7 @@ namespace GenerationAlgorithm.GITC {
             // remove cache from fitness
 
             Log.Logger = new LoggerConfiguration()
-                .WriteTo.File(Properties.Settings.Default.LogsInfoPath, rollOnFileSizeLimit: true, restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Information, fileSizeLimitBytes: 5*1024*1024)
+                .WriteTo.File(Properties.Settings.Default.LogsInfoPath, rollOnFileSizeLimit: true, restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Warning, fileSizeLimitBytes: 5*1024*1024)
                 .WriteTo.File(Properties.Settings.Default.LogsPath, rollOnFileSizeLimit: true, fileSizeLimitBytes: 5*1024*1024)
                 .WriteTo.Console()
                 .CreateLogger();
@@ -58,17 +58,16 @@ namespace GenerationAlgorithm.GITC {
                     latestFitness = bestFitness;
                     var phenotype = bestChromosome.GetTransferedString();
 
-                    Log.Verbose(
+                    Log.Information(
                         "Generation {0,2}: List: ({1})",
                         ga.GenerationsNumber,
-                        phenotype,
                         string.Join(", ",
                             ga.Population.CurrentGeneration.Chromosomes
                             .OrderByDescending(x => x.Fitness)
                             .Select(x => x.GetTransferedString() + " #" + x.Fitness)
                         )
                     );
-                    Log.Information(
+                    Log.Warning(
                         "Generation {0,2}: Best: ({1}) = {2}. Chromosome: {BestChromosome}",
                         ga.GenerationsNumber,
                         phenotype,
@@ -76,8 +75,8 @@ namespace GenerationAlgorithm.GITC {
                         ga.BestChromosome
                     );
 
-                    foreach (var chromosome in ga.Population.CurrentGeneration.Chromosomes)
-                        chromosome.Fitness = null;
+                    //foreach (var chromosome in ga.Population.CurrentGeneration.Chromosomes)
+                    //    chromosome.Fitness = null;
                     //}
                 };
 
@@ -103,7 +102,7 @@ namespace GenerationAlgorithm.GITC {
             for (int i = 0; i < parametersSize; i++)
                 list.Add(new DecimalChromosome(minValue, maxValue, 4));
 
-            var chromosome = new MultipleChromosome(list);
+            var chromosome = new MultiBinaryChromosome(list);
             return new Population(minSize: 9, maxSize: 150, adamChromosome: chromosome);
         }
 
@@ -153,7 +152,7 @@ namespace GenerationAlgorithm.GITC {
         private static ITermination GetTermination() {
             return new OrTermination(
                 new TimeEvolvingTermination(new TimeSpan(5,0,0)),
-                new GenerationNumberTermination(100)
+                new GenerationNumberTermination(30)
                 );
             return new FitnessStagnationTermination(100);
 

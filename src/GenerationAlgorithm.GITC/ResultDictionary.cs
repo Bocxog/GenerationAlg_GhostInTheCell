@@ -26,9 +26,10 @@ namespace GenerationAlgorithm {
 
         public void EvalResults(GeneticAlgorithm ga) {
             Size = ga.Population.CurrentGeneration.Chromosomes.Count;
+
             Result = new int[Size, Size];
 
-            var index = 0;
+                var index = 0;
             foreach(var chromosome in ga.Population.CurrentGeneration.Chromosomes) {
                 //Indexes[chromosome] = index;
                 Chromosomes[index] = chromosome;

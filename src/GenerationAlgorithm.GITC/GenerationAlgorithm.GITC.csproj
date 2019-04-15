@@ -73,6 +73,7 @@
     <Compile Include="FightExecuter.cs" />
     <Compile Include="FightResult.cs" />
     <Compile Include="GeneticModels\DecimalChromosome.cs" />
+    <Compile Include="GeneticModels\MultiBinaryChromosome.cs" />
     <Compile Include="Helpers\ChromosomeExtension.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
