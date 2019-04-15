@@ -42,14 +42,19 @@ namespace GenerationAlgorithm.GITC {
 
 
                 var ga = GA = new GeneticAlgorithm(population, fitness, selection, crossover, mutation);
+                ga.FitnessIsIdempotent = false;
                 ga.Termination = GetTermination();
 
                 Log.Information("Generation: The strongest algorithm GITC.");
 
                 var latestFitness = 0.0;
 
-                ga.GenerationRan += (sender, e) => {
+                ga.PopulationPrepared += (sender, e) => {
                     ResultMap.Reset();
+                    ResultMap.EvalResults(GA);
+                };
+
+                ga.GenerationRan += (sender, e) => {
                     var bestChromosome = ga.Population.CurrentGeneration.BestChromosome;
                     var bestFitness = bestChromosome.Fitness.Value;
 
@@ -74,10 +79,6 @@ namespace GenerationAlgorithm.GITC {
                         bestFitness,
                         ga.BestChromosome
                     );
-
-                    //foreach (var chromosome in ga.Population.CurrentGeneration.Chromosomes)
-                    //    chromosome.Fitness = null;
-                    //}
                 };
 
                 ga.Start();
@@ -102,18 +103,18 @@ namespace GenerationAlgorithm.GITC {
             for (int i = 0; i < parametersSize; i++)
                 list.Add(new DecimalChromosome(minValue, maxValue, 4));
 
-            var chromosome = new MultiBinaryChromosome(list);
+            var chromosome = new MultipleChromosome(list);
             return new Population(minSize: 9, maxSize: 150, adamChromosome: chromosome);
         }
 
         private static IFitness GetFitness() {
             return new FuncFitness((c) => {
-                if (!ResultMap.IsReady()) {
-                    lock (GA) {
-                        if (!ResultMap.IsReady())
-                            ResultMap.EvalResults(GA);
-                    }
-                }
+                //if (!ResultMap.IsReady()) {
+                //    lock (GA) {
+                //        if (!ResultMap.IsReady())
+                //            ResultMap.EvalResults(GA);
+                //    }
+                //}
                 return ResultMap.GetResult(c);
             });
         }

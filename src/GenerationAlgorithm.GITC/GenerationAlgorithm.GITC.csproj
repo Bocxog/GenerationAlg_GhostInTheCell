@@ -35,15 +35,6 @@
     <Reference Include="Antlr3.Runtime, Version=3.5.0.2, Culture=neutral, PublicKeyToken=eb42632606e9261f, processorArchitecture=MSIL">
       <HintPath>..\packages\Antlr3.Runtime.3.5.1\lib\net40-client\Antlr3.Runtime.dll</HintPath>
     </Reference>
-    <Reference Include="GeneticSharp.Domain, Version=2.5.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\GeneticSharp.2.5.1\lib\net462\GeneticSharp.Domain.dll</HintPath>
-    </Reference>
-    <Reference Include="GeneticSharp.Extensions, Version=2.5.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\GeneticSharp.Extensions.2.5.1\lib\net462\GeneticSharp.Extensions.dll</HintPath>
-    </Reference>
-    <Reference Include="GeneticSharp.Infrastructure.Framework, Version=2.5.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\GeneticSharp.2.5.1\lib\net462\GeneticSharp.Infrastructure.Framework.dll</HintPath>
-    </Reference>
     <Reference Include="NCalc, Version=1.0.1.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\NCalc.NetCore.1.0.1\lib\netstandard2.0\NCalc.dll</HintPath>
     </Reference>
@@ -72,8 +63,6 @@
   <ItemGroup>
     <Compile Include="FightExecuter.cs" />
     <Compile Include="FightResult.cs" />
-    <Compile Include="GeneticModels\DecimalChromosome.cs" />
-    <Compile Include="GeneticModels\MultiBinaryChromosome.cs" />
     <Compile Include="Helpers\ChromosomeExtension.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -93,6 +82,14 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\dependencies\GeneticSharp\src\GeneticSharp.Domain\GeneticSharp.Domain.csproj">
+      <Project>{a7c3e227-7e24-45f8-9a00-6d60a3592966}</Project>
+      <Name>GeneticSharp.Domain</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\dependencies\GeneticSharp\src\GeneticSharp.Extensions\GeneticSharp.Extensions.csproj">
+      <Project>{b2ce82f6-20f0-4233-a819-464498497e05}</Project>
+      <Name>GeneticSharp.Extensions</Name>
+    </ProjectReference>
     <ProjectReference Include="..\AlgorithmPowerChecker\AlgorithmPowerChecker.csproj">
       <Project>{49b96ee1-2d33-471f-aebf-f79f197fbebf}</Project>
       <Name>AlgorithmPowerChecker</Name>
