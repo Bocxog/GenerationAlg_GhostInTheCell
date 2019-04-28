@@ -8,7 +8,7 @@
 class Player
 {
     static void Main(string[] args) {
-        GlobalConfig.FillGlobalConstants(args);
+        GlobalConfig.FillGlobalConstants(args.Any() ? args : new[] { "44.014|81.6245|20.543|86.1012|18.8993|75.6031|-3.2367" });
 
         string[] inputs;
         int factoryCount = int.Parse(Console.ReadLine()); // the number of factories
