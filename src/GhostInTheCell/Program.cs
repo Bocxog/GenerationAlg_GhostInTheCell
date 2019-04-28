@@ -87,8 +87,13 @@ class Player
 
                 if (entityType == "FACTORY") {
                     graph.RefreshFactoryInfo(entityId, arg1, arg3, arg2, arg4);
-                } else if (entityType == "TROOP") {
-                    graph.AddTroop((Side) arg1, arg4, arg2, arg3, arg5);
+                }
+                else if (entityType == "TROOP")
+                {
+                    graph.AddTroop((Side)arg1, arg4, arg2, arg3, arg5);
+                }
+                else if (entityType == "BOMB") {
+                    graph.AddBomb((Side)arg1, arg2, arg3, arg4);
                 }
             }
 
@@ -103,29 +108,17 @@ class Player
 
 public static class DecisionHelper {
     public static string GetNextBestMove(this Graph graph) {
-        return graph.ProposeMoves().GetBestCommand(Graph.GetCopy(graph));
-
-
-        var moves = new List<IMove> {new Hold()};
-        foreach (var factory in graph.Factories.Where(x => x.TroopsCount > 0 && x.Side == Side.MyOwn)) {
-            foreach (var link in factory.GetLinks()) {
-                moves.AddRange(Enumerable.Range(1, factory.TroopsCount).Select(x => new MoveTroops(new Troop {
-                    Dst = link.DestinationId,
-                    Src = factory.Id,
-                    Side = Side.MyOwn,
-                    Size = x,
-                    Remaining = link.Distance + 1
-                })));
-            }
-        }
-//        return moves.GetBestCommand(graph);
-
+        return graph.ProposeMoves().GetBestCommand(graph);
     }
 
     public static void AddMovesForJobs(this Graph graph, List<IJob> jobs, MultiMove resultMove) {}
 
     public static IEnumerable<IMove> ProposeMoves(this Graph graph) {
-        var stepsToPredict = Math.Max(graph.GetTroopSteps(), GraphLinks.MaxDistance);
+        var stepsToPredict = Math.Max(graph.GetMaxCountSteps(), GraphLinks.MaxDistance);
+
+        bool canSendBomb = graph.BombsAvailable_MyOwn > 0;
+        var bombFactoriesCandidate = new List<Factory>();
+
         var factories = new List<FactoryStates>();
         var multiMove = new MultiMove();
         yield return multiMove;
@@ -138,7 +131,11 @@ public static class DecisionHelper {
                 graph.UpdateAvailableTroops(holdState);
             }
 //            multiMove.AddMove(new Message("CBU:"+graph.Factories.Sum(x=>x.TroopsCanBeUsed)));
-
+            if (canSendBomb)
+            {
+                var sendedBombTo = graph.Bombs.Any(x=>x.Side == Side.MyOwn) ? graph.Bombs.Select(x => x.Dst).First() : -1;
+                bombFactoriesCandidate = holdState.Factories.Where(x => x.Side == Side.Enemy && x.Id != sendedBombTo).ToList();
+            }
             // если не моя по истечению ходов то стоит ее проверить.
             foreach (var factoryTarget in holdState.Factories.Where(x => x.Side != Side.MyOwn && x.Income > 0)) {
                 var testGraph = Graph.GetCopy(graph);
@@ -162,12 +159,37 @@ public static class DecisionHelper {
                     }
                 }
                 move.ChangeGraph(testGraph);
-                testGraph.DoSteps(testGraph.GetTroopSteps());
+                testGraph.DoSteps(testGraph.GetMaxCountSteps());
                 // Если изменился статус фабрики - запоминаем
                 if (testGraph.Factories[factoryTarget.Id].Side == Side.MyOwn)
                     factories.Add(new FactoryStates(factoryTarget.Id, stepsToPredict));
             }
         }
+        //Select & send the bomb
+        if (canSendBomb)
+        {
+            var bombTo = bombFactoriesCandidate
+                .OrderByDescending(x => x.Income)
+                .ThenByDescending(f => f.GetLinks().Where(x => graph.Factories[x.DestinationId].Side == Side.MyOwn).Min(x => x.Distance)) // Самая удаленная от нас
+                .FirstOrDefault();
+            if (bombTo != null)
+            {
+                var bombLinkSources = bombTo.GetLinks().Where(x => graph.Factories[x.DestinationId].Side == Side.MyOwn).OrderBy(x => x.Distance);
+                if (bombLinkSources.Any())
+                {
+                    var bombLinkSettings = bombLinkSources.FirstOrDefault();
+                    multiMove.AddMove(
+                        new SendBomb(new Bomb
+                        {
+                            Src = bombLinkSettings.DestinationId,
+                            Dst = bombTo.Id,
+                            Side = Side.MyOwn,
+                            Remaining = bombLinkSettings.Distance + 1,
+                        }));
+                }
+            }
+        }
+
         {
             var jobs = new List<IJob>();
 
@@ -276,7 +298,8 @@ public static class DecisionHelper {
     public static string GetBestCommand(this IEnumerable<IMove> moves, Graph graph) {
         decimal bestEstimate = decimal.MinValue;
         string bestMove = null;
-        var stepsToPredict = graph.GetTroopSteps();
+        int bombsUsed = 0;
+        var stepsToPredict = graph.GetMaxCountSteps();
         foreach (var move in moves) {
             //TODO: учитывать реальный инком фабрики а не 0 после бомбы.
             var estimate = move.GetEstimate(Graph.GetCopy(graph), Math.Max(GraphLinks.MaxDistance, Math.Max(stepsToPredict, move.StepsExecution())));
@@ -284,8 +307,15 @@ public static class DecisionHelper {
             if (estimate > bestEstimate) {
                 bestEstimate = estimate;
                 bestMove = move.GetConsoleCommand();
+                if (move is MultiMove) {
+                    bombsUsed = ((MultiMove)move).GetBombMoves();
+                }
+                else
+                    bombsUsed = move is SendBomb ? 1 : 0;
             }
         }
+
+        graph.BombsAvailable_MyOwn -= bombsUsed;
         Logger.ErrorLog("Best Move Cost: " + bestEstimate + " ACT:" + bestMove, LogReportLevel.BestMoveCost);
         return bestMove;
 //        return $"MSG {i};" + string.Join(";", s) + ";" + bestMove;

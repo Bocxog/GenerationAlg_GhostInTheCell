@@ -11,17 +11,34 @@ namespace GenerationAlgorithm {
     public class ResultDictionary {
         //protected Dictionary<IChromosome, int> Indexes;
         protected Dictionary<int, IChromosome> Chromosomes;
+        protected IChromosome BestChromosome;
         protected int[,] Result;
         protected int Size;
         private FightExecuter FightExecuter;
 
         public ResultDictionary(FightExecuter fightExecuter) {
             Chromosomes = new Dictionary<int, IChromosome>();
+            BestChromosome = null;
             this.FightExecuter = fightExecuter;
         }
 
         public bool IsReady() {
             return Result != null;
+        }
+
+        public IChromosome CheckBest(IChromosome chromosome)
+        {
+            if (BestChromosome == null)
+            {
+                BestChromosome = chromosome;
+            }
+            else
+            {
+                if (GetFightResult(BestChromosome, chromosome, 5) < 0)
+                    BestChromosome = chromosome;
+            }
+
+            return BestChromosome;
         }
 
         public void EvalResults(GeneticAlgorithm ga) {
@@ -37,15 +54,15 @@ namespace GenerationAlgorithm {
             }
             for (int i = 0; i < Size; i++) {
                 for (int j = i + 1; j < Size; j++) {
-                    var fightResult = GetFightResult(Chromosomes[i], Chromosomes[j]);
+                    var fightResult = GetFightResult(Chromosomes[i], Chromosomes[j], 1);
                     Result[i, j] = fightResult;
                     Result[j, i] = -fightResult;
                 }
             }
         }
 
-        private int GetFightResult(IChromosome chromosome1, IChromosome chromosome2) {
-            return FightExecuter.GetCompetitionResult(chromosome1, chromosome2);
+        private int GetFightResult(IChromosome chromosome1, IChromosome chromosome2, int count) {
+            return FightExecuter.GetCompetitionResult(chromosome1, chromosome2, count);
         }
 
         public double GetResult(IChromosome chromosome) {
