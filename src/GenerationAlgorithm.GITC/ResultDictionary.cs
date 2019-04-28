@@ -44,7 +44,7 @@ namespace GenerationAlgorithm {
         public void EvalResults(GeneticAlgorithm ga) {
             Size = ga.Population.CurrentGeneration.Chromosomes.Count;
 
-            Result = new int[Size, Size];
+            Result = new int[Size, Size + 1];
 
                 var index = 0;
             foreach(var chromosome in ga.Population.CurrentGeneration.Chromosomes) {
@@ -58,10 +58,16 @@ namespace GenerationAlgorithm {
                     Result[i, j] = fightResult;
                     Result[j, i] = -fightResult;
                 }
+                if (Program.mostBestChromosome != null)
+                {
+
+                    var fightResult = GetFightResult(Chromosomes[i], Program.mostBestChromosome, 2);
+                    Result[i, Size] = fightResult * 2;
+                }
             }
         }
 
-        private int GetFightResult(IChromosome chromosome1, IChromosome chromosome2, int count) {
+        public int GetFightResult(IChromosome chromosome1, IChromosome chromosome2, int count) {
             return FightExecuter.GetCompetitionResult(chromosome1, chromosome2, count);
         }
 
@@ -69,7 +75,7 @@ namespace GenerationAlgorithm {
             //var index = Indexes[chromosome];
             var index = Chromosomes.First(x => x.Value == chromosome).Key;
 
-            return Enumerable.Range(0, Size).Sum(i => Result[index, i]);
+            return Enumerable.Range(0, Size + 1).Sum(i => Result[index, i]);
         }
 
         internal void Reset() {

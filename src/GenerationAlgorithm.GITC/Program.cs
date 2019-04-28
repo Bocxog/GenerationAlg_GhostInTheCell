@@ -16,7 +16,8 @@ using Serilog;
 
 namespace GenerationAlgorithm.GITC {
     class Program {
-        static List<IChromosome> bestChromosomes = new List<IChromosome>();
+        static List<IChromosome> mostBestChromosomes = new List<IChromosome>();
+        public static IChromosome mostBestChromosome = null;
         static GeneticAlgorithm GA = null;
 
         static FightExecuter FightExecuter = new FightExecuter();
@@ -58,7 +59,24 @@ namespace GenerationAlgorithm.GITC {
                     var bestChromosome = ga.Population.CurrentGeneration.BestChromosome;
                     var bestFitness = bestChromosome.Fitness.Value;
 
-                    bestChromosomes.Add(bestChromosome);
+                    mostBestChromosomes.Add(bestChromosome);
+
+                    if (mostBestChromosome == null)
+                    {
+                        mostBestChromosome = bestChromosome;
+                        mostBestChromosomes.Add(mostBestChromosome);
+                    }
+                    else if (!mostBestChromosomes.Any(x => x.Equals(bestChromosome)))
+                    {
+                        var result = ResultMap.GetFightResult(mostBestChromosome, bestChromosome, 5);
+                        if (result < 0)
+                        {
+                            mostBestChromosome = bestChromosome;
+                            mostBestChromosomes.Add(mostBestChromosome);
+                            Log.Warning("Most Best Chromosome changed to: {0}", mostBestChromosome.GetTransferedString());
+                        }
+                    }
+
 
                     latestFitness = bestFitness;
                     var phenotype = bestChromosome.GetTransferedString();
@@ -73,11 +91,11 @@ namespace GenerationAlgorithm.GITC {
                         )
                     );
                     Log.Warning(
-                        "Generation {0,2}: Best: ({1}) = {2}. Chromosome: {BestChromosome}",
+                        "Generation {0,2}: Best: ({1}) = {2}. Most Best Chromosome: ({3})",
                         ga.GenerationsNumber,
                         phenotype,
                         bestFitness,
-                        ga.BestChromosome
+                        mostBestChromosome.GetTransferedString()
                     );
                 };
 
@@ -86,8 +104,9 @@ namespace GenerationAlgorithm.GITC {
             catch(Exception e) {
                 Log.Error(e, "Exception is occured while");
             }
-            
+
             //Console.WriteLine("Generation is ended.");
+            Log.Warning("Most Best Chromosome equal: ({0})", mostBestChromosome.GetTransferedString());
             Log.Information("Generation is ended.");
             Console.ReadKey();
         }
@@ -152,7 +171,7 @@ namespace GenerationAlgorithm.GITC {
 
         private static ITermination GetTermination() {
             return new OrTermination(
-                new TimeEvolvingTermination(new TimeSpan(7,0,0)),
+                new TimeEvolvingTermination(new TimeSpan(1,10,0)),
                 new GenerationNumberTermination(300)
                 );
             return new FitnessStagnationTermination(100);
