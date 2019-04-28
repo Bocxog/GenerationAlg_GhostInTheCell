@@ -58,9 +58,7 @@ namespace GenerationAlgorithm.GITC {
                 ga.GenerationRan += (sender, e) => {
                     var bestChromosome = ga.Population.CurrentGeneration.BestChromosome;
                     var bestFitness = bestChromosome.Fitness.Value;
-
-                    mostBestChromosomes.Add(bestChromosome);
-
+                    
                     if (mostBestChromosome == null)
                     {
                         mostBestChromosome = bestChromosome;

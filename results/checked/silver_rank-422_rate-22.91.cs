@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Globalization;public static class CostFunction {
@@ -8,14 +8,14 @@ using System.Globalization;public static class CostFunction {
         if (!factoriesEnemy.Any(x => x.Income > 0 || x.TroopsCount > 0))//TODO: всё войско может быть в пути. хотя считаем в конце всех ходов...
             return decimal.MaxValue;
         return factoriesMy.Sum(x => x.EvalMyFactoryCostFunction(graph))
-               - factoriesEnemy.Sum(x => (x.Income * GlobalConfig.Factory_IncomeWeight + GlobalConfig.Weight_Factory_Bonus + x.FactoryPotentialUpgradeCostFunction())*(1 + x.TroopsCount * GlobalConfig.Weight_Troop)) // With Neutrals
+               - factoriesEnemy.Sum(x => (x.Income*50 + GlobalConfig.Weight_Factory_Bonus + x.FactoryPotentialUpgradeCostFunction())*(1 + x.TroopsCount * GlobalConfig.Weight_Troop)) // With Neutrals
             ;
     }
     public static decimal FactoryPotentialUpgradeCostFunction(this Factory factory) {
         return (factory.Income < 3 && factory.TroopsCount >= 10 ? GlobalConfig.Factory_UpgradeCost * (3 - factory.Income): 0);
     }
     public static decimal EvalMyFactoryCostFunction(this Factory factory, Graph graph) {
-        decimal result = (factory.Income + factory.FactoryPotentialUpgradeCostFunction()) * (1 + factory.TroopsCount * GlobalConfig.Factory_TroopWeight);
+        decimal result = (factory.Income*50 + factory.FactoryPotentialUpgradeCostFunction()) * (1 + factory.TroopsCount * GlobalConfig.Factory_TroopWeight);
         Logger.ErrorLogInline(LogReportLevel.InnerInlineMoveCost,$"F:{factory.Id}", result);
 //        if (factory.GetLinks().Where(x => x.PathType == GraphLinks.PathType.Direct).All(x => graph.Factories[x.DestinationId].Side == Side.MyOwn))
 //            result -= 0.5f*Math.Min(1, ((float) factory.TroopsCount)/30);
@@ -95,7 +95,6 @@ public static class GlobalConfig {
     public static decimal Weight_Troop = 0.7M;
     public static decimal Weight_Factory_Bonus = 0.1M;
     public static decimal Factory_UpgradeCost = 0.7M;
-    public static decimal Factory_IncomeWeight = 15.03M;
     public static decimal Factory_TroopWeight = 0.03M;
     internal static void FillGlobalConstants(string[] args) {
         if (args.Length == 0) return;
@@ -108,7 +107,6 @@ public static class GlobalConfig {
             Weight_Factory_Bonus           = parameters[4];
             Factory_UpgradeCost            = parameters[5];
             Factory_TroopWeight            = parameters[6];
-            Factory_IncomeWeight           = parameters[7];
         }
     }
 }
@@ -507,7 +505,7 @@ public class Message : Hold {
 class Player
 {
     static void Main(string[] args) {
-        GlobalConfig.FillGlobalConstants(args.Any() ? args : new[] { "12.9871|66.2647|60.0647|9.8614|70.517|82.1323|60.6311|17.2158" });
+        GlobalConfig.FillGlobalConstants(args.Any() ? args : new[] { "44.014|81.6245|20.543|86.1012|18.8993|75.6031|-3.2367" });
         string[] inputs;
         int factoryCount = int.Parse(Console.ReadLine()); // the number of factories
         int linkCount = int.Parse(Console.ReadLine()); // the number of links between factories
