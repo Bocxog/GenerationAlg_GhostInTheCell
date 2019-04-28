@@ -29,7 +29,7 @@ namespace GenerationAlgorithm.GITC {
 
             var result = PowerChecker.GetPowerResult(configString1, configString2, count);
             //throw new NotImplementedException();
-            Log.Information("Result: {@result}. Between: '{@chromosome1}' & '{@chromosome2}'", result, configString1, configString2);
+            Log.Information("Result: {@result}/{@count}. Between: '{@chromosome1}' & '{@chromosome2}'", result, count, configString1, configString2);
 
             return result;
         }
