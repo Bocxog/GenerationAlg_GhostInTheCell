@@ -97,7 +97,7 @@ namespace GenerationAlgorithm.GITC {
             var minValue = -10;
             var maxValue = 90;
 
-            const int parametersSize = 7;
+            const int parametersSize = 8;
 
             var list = new List<IChromosome> { };
             for (int i = 0; i < parametersSize; i++)

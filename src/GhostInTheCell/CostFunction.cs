@@ -8,12 +8,12 @@ public static class CostFunction {
         if (!factoriesEnemy.Any(x => x.Income > 0 || x.TroopsCount > 0))//TODO: всё войско может быть в пути. хотя считаем в конце всех ходов...
             return decimal.MaxValue;
         return factoriesMy.Sum(x => x.EvalMyFactoryCostFunction(graph))
-               - factoriesEnemy.Sum(x => (x.Income + GlobalConfig.Weight_Factory_Bonus + x.FactoryPotentialUpgradeCostFunction())*(1 + x.TroopsCount * GlobalConfig.Weight_Troop)) // With Neutrals
+               - factoriesEnemy.Sum(x => (x.Income * GlobalConfig.Factory_IncomeWeight + GlobalConfig.Weight_Factory_Bonus + x.FactoryPotentialUpgradeCostFunction())*(1 + x.TroopsCount * GlobalConfig.Weight_Troop)) // With Neutrals
             ;
     }
 
     public static decimal FactoryPotentialUpgradeCostFunction(this Factory factory) {
-        return (factory.Income < 3 && factory.TroopsCount >= 10 ? GlobalConfig.Factory_UpgradeCost : 0);
+        return (factory.Income < 3 && factory.TroopsCount >= 10 ? GlobalConfig.Factory_UpgradeCost * (3 - factory.Income): 0);
     }
 
     public static decimal EvalMyFactoryCostFunction(this Factory factory, Graph graph) {

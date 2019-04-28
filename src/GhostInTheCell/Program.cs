@@ -8,7 +8,7 @@
 class Player
 {
     static void Main(string[] args) {
-        GlobalConfig.FillGlobalConstants(args.Any() ? args : new[] { "44.014|81.6245|20.543|86.1012|18.8993|75.6031|-3.2367" });
+        GlobalConfig.FillGlobalConstants(args.Any() ? args : new[] { "44.014|81.6245|20.543|86.1012|18.8993|75.6031|-3.2367|15.03" });
 
         string[] inputs;
         int factoryCount = int.Parse(Console.ReadLine()); // the number of factories
@@ -134,7 +134,7 @@ public static class DecisionHelper {
             if (canSendBomb)
             {
                 var sendedBombTo = graph.Bombs.Any(x=>x.Side == Side.MyOwn) ? graph.Bombs.Select(x => x.Dst).First() : -1;
-                bombFactoriesCandidate = holdState.Factories.Where(x => x.Side == Side.Enemy && x.Id != sendedBombTo).ToList();
+                bombFactoriesCandidate = holdState.Factories.Where(x => x.Side == Side.Enemy && x.Income > 1 && x.Id != sendedBombTo).ToList();
             }
             // если не моя по истечению ходов то стоит ее проверить.
             foreach (var factoryTarget in holdState.Factories.Where(x => x.Side != Side.MyOwn && x.Income > 0)) {

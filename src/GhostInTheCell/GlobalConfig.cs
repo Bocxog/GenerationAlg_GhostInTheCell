@@ -10,6 +10,7 @@ public static class GlobalConfig {
 
     public static decimal Factory_UpgradeCost = 0.7M;
 
+    public static decimal Factory_IncomeWeight = 15.03M;
     public static decimal Factory_TroopWeight = 0.03M;
 
     internal static void FillGlobalConstants(string[] args) {
@@ -25,6 +26,7 @@ public static class GlobalConfig {
             Weight_Factory_Bonus           = parameters[4];
             Factory_UpgradeCost            = parameters[5];
             Factory_TroopWeight            = parameters[6];
+            Factory_IncomeWeight           = parameters[7];
         }
     }
 }

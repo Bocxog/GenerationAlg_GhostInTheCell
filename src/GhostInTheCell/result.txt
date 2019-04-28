@@ -8,11 +8,11 @@ using System.Globalization;public static class CostFunction {
         if (!factoriesEnemy.Any(x => x.Income > 0 || x.TroopsCount > 0))//TODO: всё войско может быть в пути. хотя считаем в конце всех ходов...
             return decimal.MaxValue;
         return factoriesMy.Sum(x => x.EvalMyFactoryCostFunction(graph))
-               - factoriesEnemy.Sum(x => (x.Income + GlobalConfig.Weight_Factory_Bonus + x.FactoryPotentialUpgradeCostFunction())*(1 + x.TroopsCount * GlobalConfig.Weight_Troop)) // With Neutrals
+               - factoriesEnemy.Sum(x => (x.Income * GlobalConfig.Factory_IncomeWeight + GlobalConfig.Weight_Factory_Bonus + x.FactoryPotentialUpgradeCostFunction())*(1 + x.TroopsCount * GlobalConfig.Weight_Troop)) // With Neutrals
             ;
     }
     public static decimal FactoryPotentialUpgradeCostFunction(this Factory factory) {
-        return (factory.Income < 3 && factory.TroopsCount >= 10 ? GlobalConfig.Factory_UpgradeCost : 0);
+        return (factory.Income < 3 && factory.TroopsCount >= 10 ? GlobalConfig.Factory_UpgradeCost * (3 - factory.Income): 0);
     }
     public static decimal EvalMyFactoryCostFunction(this Factory factory, Graph graph) {
         decimal result = (factory.Income + factory.FactoryPotentialUpgradeCostFunction()) * (1 + factory.TroopsCount * GlobalConfig.Factory_TroopWeight);
@@ -95,6 +95,7 @@ public static class GlobalConfig {
     public static decimal Weight_Troop = 0.7M;
     public static decimal Weight_Factory_Bonus = 0.1M;
     public static decimal Factory_UpgradeCost = 0.7M;
+    public static decimal Factory_IncomeWeight = 15.03M;
     public static decimal Factory_TroopWeight = 0.03M;
     internal static void FillGlobalConstants(string[] args) {
         if (args.Length == 0) return;
@@ -107,6 +108,7 @@ public static class GlobalConfig {
             Weight_Factory_Bonus           = parameters[4];
             Factory_UpgradeCost            = parameters[5];
             Factory_TroopWeight            = parameters[6];
+            Factory_IncomeWeight           = parameters[7];
         }
     }
 }
@@ -505,7 +507,7 @@ public class Message : Hold {
 class Player
 {
     static void Main(string[] args) {
-        GlobalConfig.FillGlobalConstants(args.Any() ? args : new[] { "44.014|81.6245|20.543|86.1012|18.8993|75.6031|-3.2367" });
+        GlobalConfig.FillGlobalConstants(args.Any() ? args : new[] { "44.014|81.6245|20.543|86.1012|18.8993|75.6031|-3.2367|15.03" });
         string[] inputs;
         int factoryCount = int.Parse(Console.ReadLine()); // the number of factories
         int linkCount = int.Parse(Console.ReadLine()); // the number of links between factories
@@ -615,7 +617,7 @@ public static class DecisionHelper {
             if (canSendBomb)
             {
                 var sendedBombTo = graph.Bombs.Any(x=>x.Side == Side.MyOwn) ? graph.Bombs.Select(x => x.Dst).First() : -1;
-                bombFactoriesCandidate = holdState.Factories.Where(x => x.Side == Side.Enemy && x.Id != sendedBombTo).ToList();
+                bombFactoriesCandidate = holdState.Factories.Where(x => x.Side == Side.Enemy && x.Income > 1 && x.Id != sendedBombTo).ToList();
             }
             // если не моя по истечению ходов то стоит ее проверить.
             foreach (var factoryTarget in holdState.Factories.Where(x => x.Side != Side.MyOwn && x.Income > 0)) {
