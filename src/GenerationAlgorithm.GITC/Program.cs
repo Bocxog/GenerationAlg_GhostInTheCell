@@ -152,8 +152,8 @@ namespace GenerationAlgorithm.GITC {
 
         private static ITermination GetTermination() {
             return new OrTermination(
-                new TimeEvolvingTermination(new TimeSpan(5,0,0)),
-                new GenerationNumberTermination(30)
+                new TimeEvolvingTermination(new TimeSpan(7,0,0)),
+                new GenerationNumberTermination(300)
                 );
             return new FitnessStagnationTermination(100);
 
