@@ -25,9 +25,6 @@ namespace GenerationAlgorithm.GITC {
 
         static void Main(string[] args) {
             //TODO: multiple log destinations for each type & lvl
-            // why no any mutation
-            // what's problem in selection
-            // remove cache from fitness
 
             Log.Logger = new LoggerConfiguration()
                 .WriteTo.File(Properties.Settings.Default.LogsInfoPath, rollOnFileSizeLimit: true, restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Warning, fileSizeLimitBytes: 5*1024*1024)
@@ -181,36 +178,6 @@ namespace GenerationAlgorithm.GITC {
             // Generation number termination. - The genetic algorithm will be terminate when reach the expected generation number.
             // Fitness Threshold Termination - The genetic algorithm will be terminate when the best chromosome reach the expected fitness.
             // Fitness Stagnation Termination - The genetic algorithm will be terminate when the best chromosome's fitness has no change in the last generations specified.
-        }
-        #endregion
-
-        #region Floating garbage
-
-        private static IPopulation GetPopulation()
-        {            
-            var minValue = 0f;
-            var maxValue = 90f;
-            int totalBits = 10;
-            int fractionDigits = 0;
-
-            const int parametersSize = 3;
-
-            double[] arrayOfMin = new double[parametersSize];
-            double[] arrayOfMax = new double[parametersSize];
-            int[] arrayOfBits = new int[parametersSize];
-            int[] arrayOfFractionDigits = new int[parametersSize];
-
-            for (int i = 0; i < parametersSize; i++)
-            {
-                arrayOfMin[i] = minValue;
-                arrayOfMax[i] = maxValue;
-                arrayOfBits[i] = totalBits;
-                arrayOfFractionDigits[i] = fractionDigits;
-            }
-
-            var chromosome = new FloatingPointChromosome(arrayOfMin, arrayOfMax, arrayOfBits, arrayOfFractionDigits);
-            throw new NotSupportedException();
-            return new Population(minSize: 5, maxSize: 150, adamChromosome: chromosome);
         }
         #endregion
     }
