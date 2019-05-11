@@ -46,5 +46,29 @@ namespace AlgorithmPowerChecker.Properties {
                 this["RunnerPath"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("7")]
+        public int MinFactories {
+            get {
+                return ((int)(this["MinFactories"]));
+            }
+            set {
+                this["MinFactories"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("9")]
+        public int MaxFactories {
+            get {
+                return ((int)(this["MaxFactories"]));
+            }
+            set {
+                this["MaxFactories"] = value;
+            }
+        }
     }
 }
