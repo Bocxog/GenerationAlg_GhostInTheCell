@@ -8,5 +8,11 @@
     <Setting Name="RunnerPath" Type="System.String" Scope="User">
       <Value Profile="(Default)">-cp F:\Experiment\CodinGames\ghost-in-the-cell-modified_params\ RefereeRunner</Value>
     </Setting>
+    <Setting Name="MinFactories" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">7</Value>
+    </Setting>
+    <Setting Name="MaxFactories" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">9</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

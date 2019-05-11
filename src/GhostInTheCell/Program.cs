@@ -8,11 +8,20 @@
 class Player
 {
     static void Main(string[] args) {
-        GlobalConfig.FillGlobalConstants(args.Any() ? args : new[] { "44.014|81.6245|20.543|86.1012|18.8993|75.6031|-3.2367|15.03" });
 
         string[] inputs;
         int factoryCount = int.Parse(Console.ReadLine()); // the number of factories
         int linkCount = int.Parse(Console.ReadLine()); // the number of links between factories
+
+        if (args.Any())
+            GlobalConfig.FillGlobalConstants(args);
+        else if (factoryCount <= 9) {
+            GlobalConfig.FillGlobalConstants(new[] { "17.5725|47.1822|28.1432|23.7933|64.3886|12.7707|36.8099|11.6059" });
+        } else if (factoryCount <= 11) {
+            GlobalConfig.FillGlobalConstants(new[] { "-8.397|78.3473|71.5912|50.429|19.2747|85.19|77.1327|72.7151" });
+        } else
+            GlobalConfig.FillGlobalConstants(new[] { "1.633|15.7159|25.474|88.3882|75.0557|9.5088|81.0026|83.2856" });
+
         GraphLinks.Size = factoryCount;
         GraphLinks.Links = new GraphLinks.ShortestPath[factoryCount, factoryCount];
         var graph = new Graph();

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Globalization;public static class CostFunction {
@@ -515,7 +515,7 @@ class Player
         else if (factoryCount <= 9) {
             GlobalConfig.FillGlobalConstants(new[] { "17.5725|47.1822|28.1432|23.7933|64.3886|12.7707|36.8099|11.6059" });
         } else if (factoryCount <= 11) {
-            GlobalConfig.FillGlobalConstants(new[] { "-8.397|78.3473|71.5912|50.429|19.2747|85.19|77.1327|72.7151" });
+            GlobalConfig.FillGlobalConstants(new[] { "12.9871|66.2647|60.0647|9.8614|70.517|82.1323|60.6311|17.2158" });
         } else
             GlobalConfig.FillGlobalConstants(new[] { "1.633|15.7159|25.474|88.3882|75.0557|9.5088|81.0026|83.2856" });
         GraphLinks.Size = factoryCount;

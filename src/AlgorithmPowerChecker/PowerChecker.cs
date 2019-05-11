@@ -9,14 +9,15 @@ using System.Threading.Tasks;
 
 namespace AlgorithmPowerChecker {
     public class PowerChecker {
-        public static int GetPowerResult(string firstParameters, string secondParameters, int competitionsCount) {
+        public static int GetPowerResult(string firstParameters, string secondParameters, int competitionsCount, int? minFactories = null, int? maxFactories = null) {
+            //return new Random().Next(-competitionsCount, competitionsCount + 1);
             int sum = 0;
             var myCollection = new object();            
 
             Task[] tasks = new Task[competitionsCount];
             for (int i = 0; i < competitionsCount; i++) {
                 tasks[i] = Task.Factory.StartNew(() => {
-                    var result = GetFightResult(firstParameters, secondParameters);
+                    var result = GetFightResult(firstParameters, secondParameters, minFactories, maxFactories);
                     lock (myCollection) {
                         sum += (int)result;
                         //Console.WriteLine(sum);
@@ -28,12 +29,14 @@ namespace AlgorithmPowerChecker {
             return sum;
         }
 
-        static SingleFightResult GetFightResult(string firstParameters, string secondParameters) {
+        static SingleFightResult GetFightResult(string firstParameters, string secondParameters, int? minFactories, int? maxFactories) {
             using (Process process = new Process()) {
                 process.StartInfo.FileName = @"C:\Program Files\Java\jdk1.8.0_201\bin\java.exe";// Properties.Settings.Default.RunnerPath;
                 process.StartInfo.Arguments =
                     string.Join(" ",
                     Properties.Settings.Default.RunnerPath,
+                    minFactories ?? Properties.Settings.Default.MinFactories,
+                    maxFactories ?? Properties.Settings.Default.MaxFactories,
                     Properties.Settings.Default.AlgorithmExePath,
                     firstParameters,
                     //'"'+firstParameters+ '"',

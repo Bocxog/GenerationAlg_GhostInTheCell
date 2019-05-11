@@ -60,7 +60,6 @@ namespace GenerationAlgorithm {
                 }
                 if (Program.mostBestChromosome != null)
                 {
-
                     var fightResult = GetFightResult(Chromosomes[i], Program.mostBestChromosome, 2);
                     Result[i, Size] = fightResult * 2;
                 }
